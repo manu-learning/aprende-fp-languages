@@ -1,0 +1,218 @@
+#+STARTUP: inlineimages
+* Definir variables - Defvar Vs. Setq
+  - Al definir una variable con ~defvar~ el valor de ésta NO se sobreescribe si ya existe
+  - Al definir una variable con ~setq~ el valor de ésta SI se sobreescribe
+* Defvar - Definir una variable única vez
+** Conceptos
+  - Con ~defvar~ podemos definir una variable "similar" que con ~setq~
+* Declarar Variables y Definirlas con setq y set
+** Conceptos
+  - La sintáxis para declarar una variable es ~'nombreVariable~
+  - La sintáxis para declarar e inicializar una variable es ~(setq nombreVariable valor)~ ó ~(set 'nombre valor)~
+
+  |-----------------+----------------------------------------------------------------------------------------------------|
+  | Keyword         | Descripción                                                                                        |
+  |-----------------+----------------------------------------------------------------------------------------------------|
+  | ~defconst~      | Definir una variable constante (/actúa como un calificador de tipo const, lo hace no modificable/) |
+  | ~setq~          | Definir (declarar e inicializar) una variable                                                      |
+  | ~set~           | Definir (declarar e inicializar) una variable (necesitás usar el apostrofe en la variable)         |
+  | ~'~ (apostrofe) | Declarar una variable                                                                              |
+  |-----------------+----------------------------------------------------------------------------------------------------|
+
+  #+BEGIN_QUOTE
+  Un error común es evaluar la expresión con ~C-x C-e~ pero no posicionar el cursor al final de ésta
+
+  Por ejemplo si definimos una variable ~contador~ de la siguiente manera ~(setq contador 0)~
+  y tenemos el cursor en el paréntesis de apertura,
+  al intentar evaluar con el atajo ~C-x C-e~ se producirá un error y no evaluará lo que queríamos
+
+  La solución es posicionar el cursor al final de dicha expresión,
+  es decir en el paréntesis de cierre
+  #+END_QUOTE
+** Ejemplos
+*** Ejempo 1 - Declarar una variable
+  #+BEGIN_SRC elisp :exports both
+    'flores
+  #+END_SRC
+
+  #+RESULTS:
+  : flores
+*** Ejemplo 2 - Definir una variable con set y asignarle una lista como valor
+  #+BEGIN_SRC elisp :exports both
+    ;; le asignamos a flower una lista
+    ;; 'flower es una variable
+    ;; y '(rosa violeta) es una lista con dos elementos
+    (set 'flowers '(rosa violeta))
+
+    ;; hacemos que retorne la lista que tiene la variable flowers
+    flowers
+  #+END_SRC
+
+  #+RESULTS:
+  | rosa | violeta |
+*** Ejemplo 3 - Definir una variable con setq y asignarle una lista como valor
+  #+BEGIN_SRC elisp :exports both
+    ;; la q de setq hace referencia a quote osea cita
+    ;; por tanto no es necesario citar el primer argumento carnivores con el apóstrofe
+    ;;
+    ;; mientras que con set solo, si habria que citar el primer argumento con el apóstrofe
+    (setq carnivores '(lion tiger leopard))
+    carnivores
+  #+END_SRC
+
+  #+RESULTS:
+  | lion | tiger | leopard |
+*** Ejemplo 4 - Declarando e inicializando multiples variables con setq
+  #+BEGIN_SRC elisp :exports both
+    ;; con setq podemos hacer multiples asignaciones
+    (setq nombre "carlitos" edad 19)
+
+    ;; usamos message para imprimir
+    ;; usando los especificadore de formato %s (para string)
+    ;; y %d (para constantes numéricas enteras)
+    (message "su nombre es %s y su edad es %d" nombre edadd)
+  #+END_SRC
+
+  #+RESULTS:
+  : su nombre es carlitos y su edad es 19
+
+*** Ejemplo 5 - Declarando e inicializando multiples variables con setq
+  #+BEGIN_SRC elisp :exports both
+    ;; con setq podemos hacer multiples asignaciones
+    ;; en este caso a carnivores una lista
+    ;; y a hervivores otra lista
+    (setq carnivoros '(lion tiger leopard)
+          hervivoros '(gacela cebra))
+
+    carnivoros
+    hervivoros
+  #+END_SRC
+
+  #+RESULTS:
+  | gacela | cebra |
+*** Ejemplo 6 - Usar una variable como contador e incrementar su valor en 1
+  #+BEGIN_SRC elisp :exports both
+    ; declaramos la variable `contador' y la inicializamos en 0
+    ; declaramos la variable `contador' e inicializamos en cero
+    (setq contador 0)
+
+    ; - incrementamos el valor actual en 1 usando la función para sumar (+ x y)
+    ; - cada vez que hagamos `C-x C-e' incrementará en 1 la variable `contador'
+    (setq contador (+ contador 1))
+
+    ; imprimimos su valor
+    contador
+  #+END_SRC
+
+  #+RESULTS:
+  : 1
+* Declarar multiples variables con setf
+** Ejemplo
+   #+BEGIN_SRC elisp
+     ;; con setf podemos definir multiples variables
+     (setf a 1 b 2 c 3)
+
+     ;; si evaluamos las tres variables tendrán los valores asignados con setf
+     a
+     b
+     c
+   #+END_SRC
+* Let
+** Conceptos
+  - La sintáxis es ~(let ((variableA valorX) (variableB valorY) ...) (cuerpo-de-la-funcion)~
+  - Crea un nuevo scope, sobreescribe el valor de las variables externas pero sólo dentro del ámbito/scope
+  - Para definir variables locales ó sobreescribir variables externas para uso dentro de la funcion
+  - Los parámetros que recibe son
+    1. 1º parámetro: una lista de clave-valor cada elemento con ésta sintáxis ~(variable valor)~
+    2. 2º parámetro: el cuerpo de la función (una ó varias funciones) 
+** Ejemplos
+*** Ejemplo 1 - Definimos dos variables locales al scope de let
+  #+BEGIN_SRC elisp :exports both
+    ;; let lleva como primer argumento una lista de clave-valor ((variableA valor) (variableB valor))
+    ;; como segundo argumento un cuerpo de la función
+    (let ((a "Soy a")(b "y yo soy b"))
+      (message "Hi, %s. Hi %s" a b))
+  #+END_SRC
+
+  #+RESULTS:
+  : Hello, I'm a. Hello I'm b
+*** Ejemplo 2 - Definimos dos variables, y reescribimos dentro del scope el valor de una variable externa
+  #+BEGIN_SRC elisp :exports both
+    ;; definimos `x' con valor 10
+    (setq x 10)
+    ;; nos imprimirá 10 en el minibuffer
+    (message "el valor de x es %d" x)
+
+    ;; - se definen dos variables x=10 e y=5, y luego se multiplican
+    ;; - el resultado de evaluar será 10
+    ;; - sobreescribe el valor de `x' internamente sólo para esta función
+    (let ((x 2) (y 5)) (* x y))
+
+    ;; el resultado de x será el mismo que definimos al principio
+    ;; se mantiene con el valor `10', no fue alterado por `let'
+    (message "el valor de x es %d" x)
+  #+END_SRC
+*** TODO Ejemplo 3
+  #+BEGIN_SRC elisp :exports both
+    ;; definimos una función que no recibe parámetros,
+    ;; e imprime en el minibuffer el valor de `c'
+    (defun funcion-loca ()
+      (message "El valor de `c' es %s" c))
+
+    (defvar c "tururu..")
+
+    ;; Vemos que el valor de `c' no será el de arriba
+    (let ((a "String de una variable local") (c "Sobreescribo la variable externa"))
+      (funcion-loca)
+      (message "El valor de `a' es: %s, y el de `c' es %s" a c))
+  #+END_SRC
+
+  #+RESULTS:
+  : El valor de ‘a’ es: String de una variable local, y el de ‘c’ es Sobreescribo la variable externa
+*** Ejemplo 4 - Variables con datos del buffer actual
+  #+BEGIN_SRC elisp :exports both
+    ;; let tiene una lista de clave-valor ((nombre1 valor1) (nombre2 valor2))
+    ;; "en este caso valor1 y valor2 son funciones que retoran datos del buffer actual"
+    ;; seguido de un cuerpo que es (message )
+    (let ((foo (buffer-name)) (bar (buffer-size)))
+      (message "Este buffer es %s y tiene %d caracteres." foo bar))
+  #+END_SRC
+
+  #+RESULTS:
+  : Este buffer es README.org y tiene 12632 caracteres.
+*** TODO Ejemplo 5
+   #+BEGIN_SRC elisp
+     ;; sólo devuelve el valor de una variable local
+     (let ((fuerza 100)
+           (nivel 1))
+       fuerza)
+
+     ;; devuelve la variable declarada como fuerza
+     ;; (no devuelve su valor)
+     (setq fuerza 500)
+     (let ((fuerza 100)
+           (nivel 1))
+       'fuerza)
+
+     ;; imprimimos el valor de las dos variables locales
+     (let ((fuerza 100)
+           (nivel 1))
+       (message "hola fuerza=%d nivel=%d" fuerza nivel))
+
+
+     (let ((data '((key1 . 4)
+                   (key2 . "tree"))))
+       (cdr (assoc 'key2 data)))
+
+     ;; definimos una variable qu le asignamos una lista de propiedades
+     (setq datos '(:clave1 4 :clave2 "tree"))
+     ;; definimos una variable local a `let' y le asignamos el valor
+     ;; de un elemento de la Lista de propiedades, buscandolo por su clave `clave1'
+     ;; luego sólo imprimimos su valor
+     (let ((dato1 (plist-get datos :clave1)))
+       (message "el valor del elemento es %s" dato1))
+   #+END_SRC
+** Referencias
+*** TODO Referencias Oficiales
+*** Referencias Issues
+   1. [[https://stackoverflow.com/questions/32802132/why-are-there-two-parentheses-after-let-in-emacs-lisp][Why are there two parentheses after let? (stackoverflow.com)]]

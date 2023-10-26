@@ -1,0 +1,52 @@
+#+EXPORT_FILE_NAME: exports/
+
+#+BEGIN_SRC elisp
+  (org-html-export-to-html)
+#+END_SRC
+
+#+RESULTS:
+: exports/nombre.html
+
+#+BEGIN_SRC elisp
+  (defun exportar-org-a-html ()
+    (interactive)
+    ;(add-hook 'after-save-hook 'org-html-export-to-html nil t)
+    (set-buffer-modified-p t)
+    (progn (remove-hook 'after-save-hook 'org-html-export-to-html t)
+    (message "borrado en html amigo"))
+    )
+
+  (exportar-org-a-html)
+#+END_SRC
+
+#+RESULTS:
+: borrado en html amigo
+
+probando teress
+
+#+BEGIN_SRC elisp
+  (defun toggle-html-export-on-save ()
+    "Enable or disable export HTML when saving current buffer."
+    (interactive)
+    (when (not (eq major-mode 'org-mode))
+      (error "Not an org-mode file!"))
+    (if (memq 'org-html-export-to-html after-save-hook)
+        (progn (remove-hook 'after-save-hook 'org-html-export-to-html t)
+               (message "Disabled org html export on save"))
+      (add-hook 'after-save-hook 'org-html-export-to-html nil t)
+      (set-buffer-modified-p t)
+      (message "Enabled org html export on save")))
+
+  (toggle-html-export-on-save)
+#+END_SRC
+
+#+RESULTS:
+: Disabled org html export on save
+
+
+avera a a a
+
+a
+
+#+RESULTS:
+: toggle-html-export-on-save

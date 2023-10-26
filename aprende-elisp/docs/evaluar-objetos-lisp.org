@@ -1,0 +1,172 @@
+#+TITLE: Evaluar Objetos Lisp (sexp)
+* List Vs Quote (comilla simple)
+** Conceptos
+   - Con ~list~ creamos una lista de elementos, donde cada elemento es evaluado
+   - Con ~quote~ el símbolo que le siga no se evalúa (/Ej. si era una función no se invocará/)
+   - Con ~quote~ también podemos crear una lista, donde ningún elemento se evalúa de la forma ~(quote (elemento1 elemento2 ...))~
+   - La forma corta de usar ~quote~ son las comillas simples ~'~
+** Ejemplos Básicos
+*** Ejemplo con List
+    #+BEGIN_SRC elisp
+      ;; devuelve una lista con dos elementos: 1 y 2
+      (list 1 2)
+
+      ;; creamos una lista con 3 elementos,
+      ;; con las comillas simples especificamos que no evalúe una expresion-s en este caso el símbolo + que es la función suma
+      ;; más adelante veremos que las comillas simples son una forma corta de usar `quote'
+      (list '+ 1 2)
+
+      ;; el símbolo + es una función que espera dos valores numéricos, al invocar retornará el resultado de la suma 1+2
+      (+ 1 2)
+
+      ;; si usamos `list' para crear la lista, todos los elementos se evalúan, por tanto evalúa la función suma cuya firma es (+ x y)
+      (list (+ 1 2))
+      (list (+ 1 2 3))
+    #+END_SRC
+*** Ejemplo con quote
+    #+BEGIN_SRC elisp
+      ;; creamos una lista con 3 elementos: + 1 2
+      ;; si creamos una lista con `quote' en vez de `list', los elementos no serán evaluados al crear la lista
+      ;; (si tuviera el símbolo + que es la función sumar, no se invocará la función y tomará sólo el símbolo +)
+      (quote (1 2))
+
+      ;; podemos usar las comillas simples en vez de `quote', también devuelve una lista con dos elementos: 1 y 2
+      '(1 2)
+
+      ;; con `quote' también creamos una lista (ésta tiene 3 elementos),
+      ;; pero ninguno de los elementos se evaluará (por tanto el símbolo + que es la función suma no se ejecutará)
+      (quote (+ 1 2))
+
+      ;; creamos una lista con 6 elementos: + 1 2 a b c
+      (quote (+ 1 2 a b c))
+
+      ;; con quote no se evalúa foo, retorna un objeto lisp el símbolo foo
+      (quote foo)
+
+      ;; es lo mismo que con quote, retorna un objeto lisp el símbolo foo
+      'foo
+    #+END_SRC
+*** Ejemplo usando quote y list
+    #+BEGIN_SRC elisp
+      ;; creamos una lista con 6 elementos
+      ;; los ultimos 3 simbolos a,b,c no serán evaluados
+      ;; si hubieramos usado `list' y estos simbolos no fueron declarados previamente, arrojará un error
+      '(+ 1 2 a b c)
+      ;; confirmamos que tiene 6 elementos, retornará el valor 6
+      (length '(+ 1 2 a b c))
+
+
+      ;; declaramos la variable `a' y le asignamos un valor
+      (setq a 5)
+      ;; creamos una lista con 1 elemento que es el resultado de la suma (+ 1 2 5)
+      (list (+ 1 2 a))
+      ;; confirmamos que tiene 1 elemento con `length'
+      (length (list (+ 1 2 a)))
+    #+END_SRC
+** Otros ejemplos
+*** Ejemplo - Crear listas con quote
+    #+BEGIN_SRC elisp
+      ;; creamos una lista con 5 elementos el tercer elemento es (list 3 4) no creó la lista (3 4)
+      (quote (1 2 (list 3 4) pepe 6))
+
+      ;; con la comilla simple es la forma corta de usar `quote'
+      '(1 2 (list 3 4) pepe 6)
+
+      ;; confirmamos que tiene 5 elementos
+      (length '(1 2 (list 3 4) pepe 6))
+    #+END_SRC
+*** Ejemplo - Obtener elementos de listas creadas con quote y list
+    #+BEGIN_SRC elisp
+      ;; con `car' obtenemos la cabeza de la lista, retornará 1
+      (car (list 1 2 3 4))
+      (car '(1 2 3 4))
+
+      ;; con `cdr' obtenemos la cola de la lista, retornará (2 3 4)
+      (cdr (list 1 2 3 4))
+      (cdr '(1 2 3 4))
+
+      ;; obtenemos la cola de la lista, retornará (lista de simbolos)
+      (cdr '(una lista de simbolos))
+
+      ;; obtenemos la cabeza de la lista, retornará `una'
+      (car '(una lista de simbolos))
+    #+END_SRC
+* Backquote (comilla invertida)
+** Conceptos
+   - El símbolo ~`~ (backquote, la tilde) es similar a usar ~'~ (quote, comilla simple)
+   - Con el símbolo ~`~ (backquote) creamos una lista de elementos, donde podemos especificar que elemento evaluar usando el símbolo ~,~ (la coma)
+   - Si usamos ~,@~ en vez de ~,~ en un elemento que es una sublista, sus elementos se unen a los de la lista que los contiene
+** Ejemplos
+*** Ejemplo 1 - Crear listas con ` (backquote)
+    #+BEGIN_SRC elisp
+      ;; creamos una lista con la forma corta de `quote' (comillas simples) con 5 elementos,
+      ;; que no evalúa los elementos de la lista
+      ;; por tanto no evaluará la función (+ 2 3) y la agregará como un objeto lisp sin ser evaluado
+      '(una lista de (+ 2 3) simbolos)
+
+      ;; obtenemos la cabeza de la lista, retornará (+ 2 3) como símbolo
+      (car '((+ 2 3) es un simbolo))
+
+      ;; creamos una lista de 5 elementos con `backquote' (la tilde)
+      ;; que produce el mismo resultado que usar `quote' (al menos en este caso)
+      ;; más adelante veremos como podemos especificar que elementos evaluar
+      `(una lista de (+ 2 3) simbolos)
+
+      ;; confirmamos que tiene 5 elementos usando la función `length'
+      (length '(una lista de (+ 2 3) simbolos))
+
+      (length `(una lista de (+ 2 3) simbolos))
+    #+END_SRC
+*** Ejemplo 2 - Crear listas con ` (backquote) y evaluar sólo algunos elementos con el símbolo , (la coma)
+    #+BEGIN_SRC elisp
+      ;; con el símbolo , (la coma) evaluamos sólo el cuarto elemento de la lista creada con ` y se ejecutará la llamada a la función (+ 2 3)
+      ;; sólo funciona si creamos la lista con el simbolo ` (backquote)
+      `(una lista de ,(+ 2 3) simbolos)
+
+      ;; si declaramos la lista con comilla simple, entonces no evaluará la función (+ 2 3)
+      '(una lista de ,(+ 2 3) simbolos)
+    #+END_SRC
+*** Ejemplo 3
+    #+BEGIN_SRC elisp
+      ;; declaramos una lista llamada mi-lista y le asignamos dos elementos
+      (setq mi-lista '(2 3))
+
+      ;; creamos una lista con `cons' y le agregamos
+      ;; 1) en la cabeza de la lista el valor entero 1
+      ;; 2) en la cola de la lista agregamos los elementos de mi-lista (que previamente le agregamos el 4 al final)
+      ;;
+      ;; NOTA: la función `append' utiliza el concepto de "inmutabilidad", retornando una nueva lista sin modificar la original que se pasó por parámetro
+      (cons 1 (append mi-lista '(4)))
+
+      ;; con `backquote' se crea una lista similar que con `quote' (la forma corta de quote era la comilla simple)
+      ;; pero agrega la característica de elegir que objeto lisp queremos evaluar usando el símbolo , (la coma) en el objeto lisp
+      ;;
+      ;; 1. con la coma: evaluará el símbolo mi-lista quedando una lista de 3 elementos (1 (2 3) 4) el segundo es una sublista
+      ;; 2. con ,@ se evalúa mi-lista y además une sus elementos con el resto de la lista quedando (1 2 3 4)
+      `(1 ,@mi-lista 4)
+
+      ;; creamos una lista con 3 elementos (1 (2 3) 4)
+      ;; el segundo elemento es una sublista con dos elementos (2 3)
+      `(1 ,mi-lista 4)
+    #+END_SRC
+*** Ejemplo 4
+    #+BEGIN_SRC elisp
+      ;; creamos una lista llamada mi-lista con `quote' que tiene 3 simbolos como elementos (pepe foo bar)
+      (setq mi-lista '(pepe foo bar))
+
+      ;; creamos otra lista con `backquote' y solo evaluamos el cuarto elemento que es una lista (mi-lista)
+      ;; y unirá sus elementos con la lista principal por usar ,@
+      ;;
+      ;; NOTA: esto no podríamos hacerlo con `list' ni `quote' es decir (list simboloA simboloB simboloC) ni con '(simboloA simboloB simboloC)
+      `(unimos los elementos ,@mi-lista con esta lista)
+
+      ;; similar que la lista anterior, solo que usamos `cdr' para obtener la cola de la lista que es (foo bar)
+      `(unimos los elementos ,@(cdr mi-lista) con esta lista)
+    #+END_SRC
+* Referencias
+** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Evaluation.html][Evaluation (gnu.org)]]
+   2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Quoting.html][Quoting (gnu.org)]]
+   3. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Backquote.html][Backquote (gnu.org)]]
+** Referencias Extraoficiales
+   1. [[https://emacstil.com/til/2022/01/05/elisp-what-does-backquote-do/][What does backquote do (emacstil.com)]]

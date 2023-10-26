@@ -1,0 +1,67 @@
+* cl-case - Switch case
+** Conceptos
+  - El switch case se utiliza con ~cl-case~
+** Ejemplos
+*** Ejemplo 1 - Dias de la semana
+    #+BEGIN_SRC elisp
+ (defun dia-de-la-semana (valor)
+   (message
+    (cl-case valor
+      (1 "lunes")
+      (2 "martes")
+      (3 "miercoles")
+      (4 "jueves")
+      (5 "viernes")
+      (6 "sabado")
+      (7 "domingo"))))
+
+ (dia-de-la-semana 1)
+    #+END_SRC
+*** Ejemplo 2
+    #+BEGIN_SRC elisp
+ (defun signo-del-numero(valor)
+   (cl-case (signum valor)
+      (1 "positivo")
+      (0 "cero")
+      (-1 "negativo")))
+
+ (signo-del-numero 50)
+    #+END_SRC
+* when - Ejecutar según condición booleana
+** Conceptos
+  - La macro ~when~ recibe dos parámetros
+    1. el primer parámetro es una condición booleana
+    2. el segundo parámetro se ejecuta si se cumple la condición (si devuelve ~t~ osea es verdadera)
+** Ejemplo
+  #+BEGIN_SRC elisp
+    (when t 3)
+    (when nil 3)
+
+    ;; 1. definimos la variable x y le asignamos el valor 5
+    (setq x 5)
+
+    ;; 2. si se cumple que el var
+    (when (> x 3)
+      (message "el valor %d es mayor que 3" x))
+  #+END_SRC
+** Referencias
+*** Referencias Extraoficiales
+    1. [[https://www.tutorialspoint.com/lisp/lisp_when_construct.htm][LISP When Construct (tutorialspoint.com)]]
+* progn y prog1 - Ejecutar Secuencias
+** Conceptos
+  - ~progn~ y ~prog1~ ejecutan secuencias de expresiones
+** Ejemplo
+   #+BEGIN_SRC elisp
+     ;; progn
+     ;; - ejecuta una secuencia
+     ;; - devuelve como resultado el valor de la última expresión
+     (progn (setq a 'x) (setq b 'y) (setq c 'z))
+
+     ;; prog1
+     ;; - ejecuta una secuencia de expresiones,
+     ;; - devuelve como resultado el valor de la primera expresión
+     (prog1 (setq a 'x) (setq b 'y) (setq c 'z))
+   #+END_SRC
+* Referencias
+** Referencias Extraoficiales
+  1. [[https://www.tutorialspoint.com/lisp/index.htm][LISP Tutorial (tutorialspoint.com)]]
