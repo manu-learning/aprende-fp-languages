@@ -35,6 +35,8 @@ GIT_REMOTES=git remote \
 # 2. comando `tr`:
 # - formateamos el input para el comando `xargs`, borrando las comas de las lineas seleccionadas por `grep` de `repositorios.cfg`
 # (la intención de las comas las usabamos para separar el campo nombre y dirección de cada remoto)
+#
+# TODO: falla, si el repositorio raíz es nuevo
 GIT_REMOTOS_PENDIENTES=cat repositorios.cfg \
 	| grep --invert-match --word-regexp --extended-regexp `$(GIT_REMOTES)` \
 	| tr --delete ','
