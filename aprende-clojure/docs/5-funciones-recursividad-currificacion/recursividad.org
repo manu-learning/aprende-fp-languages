@@ -1,0 +1,827 @@
+#+TITLE: Recursividad
+#+BEGIN_COMMENT
+Implementar algoritmos con modelos matemáticos simples usando recursividad
+https://www.geeksforgeeks.org/mathematical-algorithms/
+https://jeremykun.com/category/algorithms/
+https://www.quora.com/How-should-I-learn-maths-for-programming-algorithm
+#+END_COMMENT
+* for
+** Conceptos
+   - Generar todas las combinaciones posibles de múltiples secuencias recibidas sin varios niveles de anidamiento
+   - Acepta el modificador ~:let~ para bindear/vincular valores
+   - Acepta el modificador ~:when~ para filtrar que valores usará el cuerpo de for
+   - Acepta el modificador ~:while~ para detener un ciclo de combinación (no todos, sólo un ciclo de combinaciones)
+
+   #+BEGIN_QUOTE
+   Diferencias entre los modificadores ~:when~ y ~:while~
+   - ~:when~ filtrará los resultados que el ~for~ devuelve
+   - ~:while~ detiene un ciclo de combinaciones (/resuta más fácil entenderlo al verlo en práctica/)
+   #+END_QUOTE
+** Ejemplos Básicos
+*** Ejemplo 1
+    #+BEGIN_SRC clojure
+      ;; operamos entre elementos de una lista
+      (for [x (list 1 2 3)
+            y (list 1 2 3)]
+        (* x y))
+
+      ;; operamos entre elementos de un vector
+      (for [x [1 2 3]
+            y [1 2 3]]
+        (* x y))
+
+      ;; devolvemos pares ordenados de la forma [letra numero]
+      (for [x ['a 'b 'c]
+            y [1 2 3]]
+        [x y])
+
+      ;; devolvemos pares ordenados de la forma [numero numero]
+      (for [x (range 3)
+            y (range 3)]
+        [x y])
+
+
+      ;; :when
+      ;; - si la condición se cumple, evalúa la expresión en el cuerpo de la función
+      (for [x (range 3)
+            y (range 3)
+            :when (not= x y)]
+        [x y])
+
+      ;; :while
+      ;; - si la condición se cumple, detiene la iteración del for
+      (for [x (range 3)
+            y (range 3)
+            :while (not= x y)]
+        [x y])
+    #+END_SRC
+*** Ejemplo 2 - for con modificadores :let :when y :while
+    #+BEGIN_SRC clojure
+      (for [n (range 100)
+            :let [doble (* 2 n)]
+            :when (even? n) ;; es par ?
+            :while (< n 10)]
+        (str "el doble de " n " es " doble))
+    #+END_SRC
+** Ejemplos
+*** Ejemplo 1 - Multiples secuencias sin varios niveles de anidamiento
+    #+BEGIN_SRC clojure
+      ;; el for hará todas las posibles combinaciones entre los elementos
+      ;; de cada secuencia (colores, materiales, tipos)
+      (let [colores [:rojo :verde :amarillo]
+            materiales [:tela :algodon]
+            tipos [:remera :campera]]
+        (for [color colores
+              material materiales
+              tipo tipos]
+          [color material tipo]))
+    #+END_SRC
+*** Ejemplo 2 - for con modificador :while
+    #+BEGIN_SRC clojure
+      ;; el for recibe 3 secuencias de vectores
+      ;; y generará todas las combinaciones posibles [color material tipo]
+      ;;
+      ;; 1. como :rojo != :verde, entonces devolverá todas las combinaciones [:rojo material tipo]
+      ;; 2. como :verde = :verde el while detiene el flujo y no se evalúan mas combinaciones
+      ;; incluso [:amarillo material tipo] porque el while estaba después de colores
+      ;; y sólo evaluaba color
+      (let [colores [:rojo :verde :amarillo]
+            materiales [:tela :algodon]
+            tipos [:remera :campera]]
+        (for [color colores
+              :while (not= color :verde)
+              material materiales
+              tipo tipos]
+          [color material tipo]))
+    #+END_SRC
+*** Ejemplo 3 - for con modificador :while más en detalle
+    #+BEGIN_SRC clojure
+      ;; al pasarle tres secuencias x y z si no contemplamos el :while debería hacer [x y z]
+      ;; es decir todas las combinaciones de los tres vectores
+      ;;
+      ;; hasta donde pondramos el :while es hasta donde evaluará y decide si cortar el flujo
+      ;; hace combinaciones [x y] y si x!=y entonces hace [x y z] si no corta el flujo
+      ;;
+      ;;
+      ;; empieza con [1 1] como x(1)=y(1) el while corta el flujo, no evalúa ninguna combinación [1 y]
+      ;; por tanto no llega a evalúar [1 2 z] ni [1 3 z] porque ya salió del flujo con [1 1]
+      ;;
+      ;; contínua con las combinaciones [2 y]
+      ;; empezando con [2 1] como x(2)!=y(1) evalúa [2 1 z] que sería [2 1 :a] [2 1 :b]
+      ;; sigue [2 2] como x(2)=y(2) corta el flujo de combinaciones [2 2 z] filtrando [2 2 :a] [2 2 :b]
+      (for [x [1 2 3]
+            y [1 2 3]
+            :while (not= x y)
+            z [:a :b]]
+        [x y z])
+
+      ;; en dónde esté el :while indica cuantas posibles combinaciones antes de cortar el flujo
+      ;; Ej. antes era [x y] si se cumpla x=y cortaba el flujo y no llegaba a evaluar [x y z]
+      ;; Ej. ahora es [x y z] se llega a evaluar apesar de si se cumple x=y
+      ;; filtrando sólo los x=y en [x y z] en vez de sólo [x y], habiendo mas combinaciones
+      ;;
+      ;; cuando se cumple x(1)=y(1) se corta el flujo sólo para las combinaciones [1 1 z]
+      ;; pero permite el resto [1 2 z] y [1 3 z]
+      (for [x [1 2 3]
+            y [1 2 3]
+            z [:a :b]
+            :while (not= x y)]
+        [x y z])
+    #+END_SRC
+*** Ejemplo 4 - for con más de un modificador :when
+    #+BEGIN_SRC clojure
+      ;; el for hará todas las posibles combinaciones entre los elementos
+      ;; de cada secuencia (colores, materiales, tipos)
+      ;;
+      ;; pero filtrará las combinaciones q tengan la keyword :tela
+      (let [colores [:rojo :verde :amarillo]
+            materiales [:tela :algodon]
+            tipos [:remera :campera]]
+        (for [color colores
+              material materiales
+              tipo tipos
+              :when (not= material :tela)]
+          [color material tipo]))
+
+      ;; filtrará las combinaciones q tengan la keyword :rojo ó :tela
+      (let [colores [:rojo :verde :amarillo]
+            materiales [:tela :algodon]
+            tipos [:remera :campera]]
+        (for [color colores
+              material materiales
+              tipo tipos
+              :when (not= color :rojo)
+              :when (not= material :tela)]
+          [color material tipo]))
+    #+END_SRC
+** Referencias
+   1. [[https://clojuredocs.org/clojure.core/for][for - clojure.core (clojuredocs.org)]]
+*** Referencias
+* Diferencias for Vs doseq
+** Conceptos
+   - ~for~ devuelve una *secuencia perezosa*
+   - ~doseq~ ejecuta una operación que genere side-effect (Ej. println) y luego devuelve nil
+** Ejemplo
+   #+BEGIN_SRC clojure
+     ;; devuelve una secuencia perezosa, previamente cada valor del vector es incrementado en 1
+     (for [x [1 2 3 4 5]] (+ x 1))
+
+     ;; - en éste caso sólo devolverá nil porque no hay una operación side-effects
+     (doseq [x [1 2 3 4 5]] (+ x 1))
+
+     ;; - devuelve por stdout cada valor del vector y luego nil
+     ;; (el efecto de lado está en que escribe en el stdout para imprimir por el repl)
+     (doseq [x [1 2 3 4 5]] (println x))
+   #+END_SRC
+** Referencias
+*** Referencias Issues
+    1. [[https://stackoverflow.com/questions/4725417/difference-between-doseq-and-for-in-clojure][Difference between doseq and for in Clojure (stackoverflow.com)]]
+* Recur
+** Conceptos
+  - ~recur~ hace un *llamado recursivo* dentro de la función que lo contenga
+  - el compilador de Clojure aplica una *Optimización de Cola* (TCO, Tail Call Optimization) que optimiza los *llamados recursivos* de ~recur~
+  - implementa *Recursividad de Cola* (tail recursion), por tanto su llamada debe colocarse como la *última expresion a evaluar*
+
+  #+BEGIN_QUOTE
+  Para utilizar ~recur~ no es obligatorio usar la función ~loop~,
+  porque ~recur~ hace un *llamado recursivo* a la función dónde esté contenida.
+
+  Podemos combinar las funciones ~recur~ y ~loop~ si queremos vincular/bindear un valor por default,
+  previo a los llamados recursivos de ~recur~ y que se evaluará dentro del cuerpo de la función ~loop~
+  #+END_QUOTE
+** Ejemplos Básicos
+*** Ejemplo 1 - Contador de numeros
+    #+BEGIN_SRC clojure
+      (defn contar-hasta-cero-desde [n]
+        (println n)
+        (if (= 0 n)
+          (println "Terminé de contar!")
+          (recur (dec n))))
+
+      ;; alternativa 1: aplicamos el concepto de Sobrecarga de Aridad (arity overloading)
+      (defn contar-desde-cero-hasta
+        ([n] (contar-desde-cero-hasta n 0))
+        ([n contador]
+         (println contador)
+         (if (= contador n)
+           (println "Terminé de contar")
+           (recur n (inc contador)))))
+
+      ;; alternativa 2: usar la función (loop), que vincula/bindea al contador el valor 0
+      (defn contar-desde-cero-hasta* [n]
+        (loop [num n
+               contador 0]
+          (println contador)
+          (if (= contador num)
+            (println "Terminé de contar")
+            (recur num (inc contador)))))
+
+      ;;(contar-hasta-cero-desde 10)
+      ;;(contar-desde-cero-hasta 10)
+      ;;(contar-desde-cero-hasta* 10)
+    #+END_SRC
+*** Ejemplo 2 - Implementación de un Join de cadenas
+    #+BEGIN_SRC clojure
+      (def estudiantes ["carlitos" "pedrito" "samuel" "pichon"])
+
+      (defn my-join [coll resultado]
+        (if (= 1 (count coll)) (str resultado (first coll))
+          (recur (rest coll) (str resultado (first coll) ", "))))
+
+      ;; tests sencillos, que devuelven true
+      (= (my-join estudiantes "Estudiantes: ")
+         "Estudiantes: carlitos, pedrito, samuel, pichon")
+
+      (= (my-join estudiantes "Estudiantes: ")
+         (str "Estudiantes: " (clojure.string/join ", " estudiantes)))
+    #+END_SRC
+*** Ejemplo 3 - Implementación de un Sumatoria de una colección de números
+    #+BEGIN_SRC clojure
+      (defn sumatoria [coll-numeros resultado]
+        (if (empty? coll-numeros)
+          resultado
+          (recur (rest coll-numeros) (+ resultado (first coll-numeros)))))
+
+      (defn sumatoria*
+        ([coll-numeros] (sumatoria coll-numeros 0))
+        ([coll-numeros resultado]
+         (if (empty? coll-numeros)
+           resultado
+           (recur (rest coll-numeros) (+ resultado (first coll-numeros))))))
+
+      ;; tests sencillos, que devuelven true
+
+      (= 10 (sumatoria [1 2 3 4] 0))
+      (= 10 (sumatoria* [1 2 3 4]))
+
+      ;; (range 4) devuelve (0 1 2 3)
+      (= 6 (sumatoria* (range 4)))
+      (= 10 (sumatoria* (range 1 (inc 4))))
+    #+END_SRC
+*** Ejemplo 4 - Imprimir cada elemento de una colección con el (&) rest parameter
+    #+BEGIN_SRC clojure
+      (defn imprimir-elementos [& coll-argumentos]
+        (let [[primer-elemento & siguientes-elementos] coll-argumentos]
+          (println primer-elemento)
+          (when-not (empty? siguientes-elementos)
+            (recur siguientes-elementos))))
+
+      ;;(imprimir-elementos :a :b :c)
+
+      (defn imprimir-elementos* [& coll-argumentos]
+        (let [[primer-elemento & siguientes-elementos] coll-argumentos]
+          (println primer-elemento)
+          (if-not (sequential? siguientes-elementos)
+            "no hay más elementos"
+            (recur siguientes-elementos)
+            )
+          ))
+
+      ;;(imprimir-elementos* :a :b :c)
+    #+END_SRC
+** Referencias Clojure
+*** Referencias Extraoficiales
+    1. [[https://clojurebridgelondon.github.io/community-docs/docs/clojure/recur/][Loop recur (clojurebridgelondon.github.io)]]
+    2. [[https://aphyr.com/posts/305-clojure-from-the-ground-up-macros#recursion][Recursion (aphyr.com)]]
+** Referencias JavaScript
+*** Referencias Extraoficiales
+    1. [[http://www.etnassoft.com/2016/10/03/optimizacion-de-cola-en-es6-tco/][Optimización de Cola en ES6 (etnasoft.com)]]
+    2. [[https://es.javascript.info/recursion][Recursion y pila (javascript.info)]]
+* Combinar funciones Loop y Recur
+** Conceptos
+   #+BEGIN_QUOTE
+   ~loop~ vincula/bindea un valor previo a los llamados recursivos de ~recur~
+
+   si no queremos usar la función ~loop~
+   1) aplicamos el concepto de *sobrecarga de aridad* (arity overloading)
+   2) definimos el valor por default y seguido de la llamada recursiva a la misma función
+   #+END_QUOTE
+
+   #+BEGIN_SRC clojure
+      ;; alternativa 1: aplicamos el concepto de Sobrecarga de Aridad (arity overloading)
+     (defn contar-desde-cero-hasta
+       ([n] (contar-desde-cero-hasta n 0))
+       ([n contador]
+        ;; usamos la función (recur)
+        ))
+
+      ;; alternativa 2: usar la función (loop), que vincula/bindea al contador el valor 0
+     (defn contar-desde-cero-hasta* [n]
+       (loop [num n
+              contador 0]
+        ;; usamos la función (recur)
+         ))
+   #+END_SRC
+** Loop
+  - Vincula/bindea un valor a una variable previo a la llamada recursiva de ~recur~
+  - Contiene a las llamadas recursivas de ~recur~ recibiendo uno ó más argumentos
+** Recur
+  - Si combinamos ~loop~ y ~recur~, el llamado recursivo de ~recur~ se hará dentro del scope de ~loop~ (/pasandole recur a loop, uno ó más parámetros/)
+  - Si usamos sólo ~recur~ sin ~loop~, entonces ~recur~ hará el *llamado recursivo* dentro de la función que lo contenga
+** Ejemplos Básicos
+*** Ejemplo 1 - Contador con loop y recur
+    #+BEGIN_SRC clojure
+      ;; la recursividad finaliza cuando se cumple (> iteracion 3)
+      (loop [iteracion 0]
+        (println (str "Iterando.. " iteracion))
+        (if (> iteracion 3)
+          (println "Fin de la iteración")
+          (recur (inc iteracion))))
+    #+END_SRC
+*** Ejemplo 2 - Contador con loop y recur
+    #+BEGIN_SRC clojure
+      ;; la recursividad finaliza cuando se cumple (= iteracion 10)
+      ;;
+      ;; previo al llamado recursivo guardamos el resultado en el vector numeros
+      ;; usamos la variable iteración como un contador auxiliar
+      (loop [iteracion 0
+             numeros []]
+        (if (= iteracion 10)
+          numeros
+          (recur (inc iteracion) (conj numeros iteracion))))
+    #+END_SRC
+*** Ejemplo 3 - Error de compilación por no realizar recursividad de cola correctamente
+    #+BEGIN_SRC clojure
+      ;; el compilador lanzará una excepción "can only recur from tail position"
+      ;; porque no cumplimos con la "recursividad de cola"..
+      ;;
+      ;; el error ocurre porque en vez de devolver el resultado de la función recur,
+      ;; estamos devolviendo el resultado de un producto Ej. (* x f)
+      (loop [iteracion 0
+             numeros []]
+        (if (= iteracion 10)
+          numeros
+          (* iteracion (recur (inc iteracion) (conj numeros iteracion)))))
+    #+END_SRC
+** Ejemplos
+*** Ejemplo 1 - Algoritmo de Euclides
+   #+BEGIN_SRC clojure
+     ;; Usando una función nombrada para la recursividad
+     (defn gcd [a b]
+       (if (= b 0)
+         a
+         (gcd b (mod a b))))
+
+     ;; Combinando las funciones loop y recur
+     (defn gcd-own [a b]
+       (loop [x a
+              y b]
+         (if (= y 0)
+           x
+           (recur y (mod x y)))))
+
+     (gcd-own 90 60)
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://clojure.org/guides/learn/flow#_recursion][Clojure, Flow Control, Recursion (clojure.org)]]
+*** Referencias Extra-Oficiales
+    1. [[https://www.campusmvp.es/recursos/post/Recursividad-de-cola-tail-recursion.aspx][Recursividad de cola (campusmvp.es)]]
+* TODO Función Recursiva
+** Conceptos
+   - Con el concepto de *sobrecarga de aridad* podemos plantear un caso base y caso recursivo de una función
+
+   #+BEGIN_QUOTE
+   Un posible caso sería un contador que se ejecuta 4 veces
+   1. si no recibe ningún parámetro, se llama asi misma pasandose por parámetro un valor (Ej. 0)
+   2. si recibe un parámetro lo bindea/vincula a un nombre (Ej. iteracion)
+      1. si no se cumple ~(> iteracion 3)~, hacemos la llamada recursiva pasandose como parámetro la variable iteracion incrementada en 1
+      2. si se cumple ~(> iteracion 3)~, cortamos el flujo devolviendo la última expresión que queremos evaluar ~Ej.(println "fin..")~
+   #+END_QUOTE
+** Ejemplos Básicos
+*** Ejemplo 1 - Contador con recursión simple usando sobrecarga de aridad en una función nombrada
+    #+BEGIN_SRC clojure
+      ;; la recursividad finaliza cuando se cumple (> iteracion 3)
+      (defn contar-recursivamente
+        ([]
+         (contar-recursivamente 0))
+
+        ([iteracion]
+         (println (str "Iterando.." iteracion))
+         (if (> iteracion 3)
+           (println "Fin de la iteración")
+           (contar-recursivamente (inc iteracion)))))
+
+      (contar-recursivamente)
+    #+END_SRC
+*** Ejemplo 2 - Algoritmo de Euclides
+    #+BEGIN_QUOTE
+    El algoritmo de euclides devuelve el mayor denominador entre dos números
+    Por ejemplo ~(gcd 90 60) = 30~ porque
+    1. ~(mod 90 60) = 30~ porque 90=60 * 1 + 30
+    2. ~(mod 60 30) = 0~  porque 60=60 * 1 + 0, como tenemos cero, el 30 era el mayor denominador común entre 90 y 60
+    #+END_QUOTE
+
+   #+BEGIN_SRC clojure
+     (defn gcd [a b]
+       (if (= b 0)
+         a
+         (gcd b (mod a b))))
+
+     (gcd 90 60)
+   #+END_SRC
+** Ejemplos
+*** Ejemplo 1 - Factorial con recursión simple usando función nombrada
+    #+BEGIN_SRC clojure
+      ;; caso base:
+      ;; - si se cumple (<= n 1), entonces devolvemos el resultado
+      ;;
+      ;; caso recursivo:
+      ;; - si no se cumple (<= n 1), al valor inicial (n) lo multiplicamos por su valor anterior (n-1)
+      ;;
+      ;; pensemos en que la expresión (factorial (dec n)) se expandirá por cada llamado recursivo así (* n (* n (* ...)))
+      ;; ó pensando en funcional estamos componiendo 1 función nueva por cada llamado recursivo (f1 n (f2 n-1 (f3 ..)))
+      (defn factorial [n]
+        (if (<= n 1)
+          n
+          (* n (factorial (dec n)))))
+
+      ;; 3! ó el factorial de 3 si usamos la notación infija (no es propio de clojure) 3*2*1 = 6
+      (factorial 3)
+
+      ;; si n=3 hará..
+      (* 3 (* 2 (* 1)))
+
+      ;; si n=4 hará..
+      (* 4 (* 3 (* 2 (* 1))))
+    #+END_SRC
+*** Ejemplo 2 - Factorial con recursividad de cola usando recur y sobrecarga de aridad en una función nombrada
+    #+BEGIN_QUOTE
+    En una variable guardamos el valor que usaremos en el siguiente llamado recursivo,
+    en otra variable guardamos el resultado acumulado resultante de multiplicar el valor actual con el resultado acumulado
+    #+END_QUOTE
+
+    #+BEGIN_SRC clojure
+      ;; función con aridad-1:
+      ;; - hará el llamado recursivo
+      ;;
+      ;; función con aridad-2:
+      ;; - es dónde ocurre los sucesivos llamados recursivos
+      (defn factorial
+        ([n] (factorial n 1))
+        ([n resultado]
+         (if (<= n 1)
+           resultado
+           (recur (dec n) (* resultado n)))))
+
+      (factorial 10)
+    #+END_SRC
+*** Ejemplo 2 - Factorial con recursividad de cola usando recur y loop
+    #+BEGIN_SRC clojure
+      (defn factorial [numero]
+        (loop [n numero resultado 1]
+          (if (<= n 1)
+            resultado
+            (recur (dec n) (* resultado n)))))
+
+      (factorial 10)
+    #+END_SRC
+** Referencias
+*** Referencias Extraoficiales
+    1. [[http://noahlz.github.io/factorials/factorials.core.html][Exploring Clojure with Factorial Computation (noahlz.github.io)]]
+    2. [[https://nextjournal.com/avidrucker/clojure-koans-14-recursion-notebook][Clojure Koans, Recursion (nextjournal.com)]]
+    3. [[https://www.abhinavomprakash.com/posts/recursion/][Recursion (abhinavomprakash.com)]]
+* Reduce
+** Conceptos
+   - ~reduce~ facilita iterar y aplicar funciones sobre una colección
+   - ~reduce~ evita tener que definir *funciones recursivas* que requieren implementar el *caso base* y *caso recursivo*
+   - ~reduce~ evita tener que definir funciones que usen ~loop~ y ~recur~ (/estas dos funciones son una mejor opción en vez definir una función recursiva/)
+   - Usa el concepto de *sobrecarga de aridad* porque
+     - Si le pasamos sólo dos parámetros ~función colección~ elegirá por defecto como *valor semilla* el *primer elemento de la colección*
+     - Si le pasamos tres parámetros ~función semilla colección~ aplicará la función con la *semilla* y el *primer elemento de la colección*
+** Ejemplos Básicos
+*** Ejemplo 1 - Reduce con funciones anónimas
+    #+BEGIN_SRC clojure
+      ;; - imprimirá sólo la semilla (el 1) seguido de tres veces nil,
+      ;; que son los 3 elementos restantes pero no son pasados al println
+      ;;
+      ;; - al no definir nosotros cual será la semilla,
+      ;; el reduce eligió como semilla el 1º elemento del vector
+      (reduce
+       (fn [resultado elemento]
+         (println resultado))
+       [1 2 3 4])
+
+      ;; imprimirá la semilla (el 1) y devolverá 3 veces el string "BOO"
+      (reduce
+       (fn [resultado elemento]
+         (println resultado)
+         "BOOO!")
+       [1 2 3 4])
+
+      ;; imprimirá cada elemento excepto la semilla (2 3 4)
+      (reduce
+       (fn [resultado elemento] (println elemento))
+       [1 2 3 4])
+
+      ;; - definimos que la semilla será el 0,
+      ;; por tanto el reduce no podrá elegir como semilla al primer elemento (el 1) del vector
+      ;; - imprimirá cada elemento (1 2 3 4)
+      (reduce
+       (fn [resultado elemento] (println elemento))
+       0
+       [1 2 3 4])
+
+      ;; - imprime cada elemento
+      ;; - aplica la función suma en el siguiente orden
+      ;; 1. semilla (0) + primer elemento del vector (1)
+      ;; 2. resultado anterior + siguiente elemento del vector (el 2 en este vector)
+      ;; 3. se repite el paso anterior hasta que la última expresión evaluada
+      ;; es el resultado de sumar todos los elementos, por tanto devolverá sólo un valor
+      ;; (aunque la semilla ya es un indicio de que tipo de dato devolverá el reduce)
+      (reduce
+       (fn [resultado elemento]
+         (println (str "el elemento evaluado: " elemento))
+         (+ resultado elemento))
+       0
+       [1 2 3 4])
+    #+END_SRC
+*** Ejemplo 2 - Reduce con funciones comunes
+    #+BEGIN_SRC clojure
+      ;; devuelve sólo un valor, la suma de todos los elementos de la colección
+      ;; el resultado de (+ (+ (+ 1 2) 3) 4)
+      (reduce + [1 2 3 4])
+
+      ;; devuelve sólo un valor, pero al definir el 10 como semilla
+      ;; el resultado devuelto será de (+ (+ (+ 10 1) 2) 3)
+      (reduce + 10 [1 2 3])
+
+      ;; devuelve sólo un string luego de evaluar (str (str "hola " "que ") " tal")
+      ;; la cadena será "hola que tal"
+      (reduce str ["hola " "que " "tal"])
+    #+END_SRC
+*** Ejemplo 3 - Reduce con el & rest parameter
+    #+BEGIN_QUOTE
+    Recordemos que el *rest parameter* se usa en las *funciones variádicas*,
+    aquellas que reciben un número indefinido de argumentos y se usa de la forma ~& lista-argumentos~
+    #+END_QUOTE
+
+    #+BEGIN_SRC clojure
+      (reduce
+       (fn [& argumentos]
+         (println "argumentos = " argumentos))
+       [1 2 3 4 5])
+    #+END_SRC
+** Ejemplos - Implementando un Reducer
+*** Ejemplo 1 - Implementando un reduce que obliga a pasarle la semilla
+    #+BEGIN_QUOTE
+    Simulamos un reduce pero obliga a pasarle un valor semilla,
+    por lo general un reduce toma el primer elemento de la colección como semilla
+
+    1. bindea/vincula la semilla a ~resultado~ y la colección a recorrer en ~elementos-pendientes~
+    2. si ya no quedan elementos por evaluar, devuelve el ~resultado~
+    3. si quedan elementos por evaluar hace el llamado recursivo a ~loop~ con ~recur~ pasandole dos parámetros
+       - el 1º parámetro es el resultado de aplicar la funcion a dos elementos (/la semilla y primer elemento de la colección/)
+       - el 2º parámetro los elementos restantes
+    4. se repetirá paso 3 hasta que no queden más elementos, siendo ~resultado~ la última expresión evaluada y devuelta
+    #+END_QUOTE
+
+    #+BEGIN_SRC clojure
+      (defn mi-reduce
+        ([funcion semilla coleccion]
+         (loop [resultado semilla
+                elementos-pendientes coleccion]
+           (if (empty? elementos-pendientes)
+             resultado
+             (recur (funcion resultado (first elementos-pendientes)) (rest elementos-pendientes))))))
+
+      (mi-reduce + 0 [1 2 3 4])
+    #+END_SRC
+*** Ejemplo 2 - Implementando un reduce que elige sólo la semilla
+    #+BEGIN_QUOTE
+    Aplicamos *sobrecarga de aridad* porque
+
+    1. podemos pasarle un valor semilla, será el primer valor que se aplicará con el primer elemento de la colección
+    2. si no le pasamos el valor la semilla, usará el concepto de *destructuring* y elegiremos como semilla la cabeza de la colección
+       y luego hará una *llamada recursiva* al reduce
+    #+END_QUOTE
+
+    #+BEGIN_SRC clojure
+      (defn mi-reduce
+        ([funcion semilla coleccion]
+         (loop [resultado semilla
+                elementos-pendientes coleccion]
+           (if (empty? elementos-pendientes)
+             resultado
+             (recur (funcion resultado (first elementos-pendientes)) (rest elementos-pendientes)))))
+        ([funcion [cabeza & cola]]
+         (mi-reduce funcion cabeza cola)))
+
+      (mi-reduce + [1 2 3 4])
+      (mi-reduce + 0 [1 2 3 4])
+    #+END_SRC
+** Ejemplos - Implementando funciones Map y Filter
+*** Ejemplo 1 - Implementando la función Filter
+    #+BEGIN_SRC clojure
+      (def productos [{:nombre "leche" :precio 200 :tiene-precio-cuidado? true}
+                      {:nombre "pan" :precio 300 :tiene-precio-cuidado? true}
+                      {:nombre "galletas" :precio 150 :tiene-precio-cuidado? true}
+                      {:nombre "cerveza" :precio 400 :tiene-precio-cuidado? false}])
+
+      ;; usando una función anónima acortada #()
+      (filter #(:tiene-precio-cuidado? %) productos)
+
+      ;; usando una función anónima
+      (filter (fn [producto]
+                (if (:tiene-precio-cuidado? producto) producto))
+              productos)
+
+      (defn my-filter [predicado coleccion]
+        (reduce (fn [coleccion-filtrada elemento]
+                  (if (predicado elemento)
+                    (conj coleccion-filtrada elemento)
+                    coleccion-filtrada))
+                []
+                coleccion))
+
+      (my-filter #(:tiene-precio-cuidado? %) productos)
+    #+END_SRC
+*** Ejemplo 2 - Implementando la función Map
+    #+BEGIN_SRC clojure
+      (def productos [{:nombre "leche" :precio 200 :tiene-precio-cuidado? true}
+                      {:nombre "pan" :precio 300 :tiene-precio-cuidado? true}
+                      {:nombre "galletas" :precio 150 :tiene-precio-cuidado? true}
+                      {:nombre "cerveza" :precio 400 :tiene-precio-cuidado? false}])
+
+      ;; usando una función anónima acortada #()
+      (map #(:nombre %) productos)
+
+      ;; usando una función anónima
+      (map (fn [producto]
+             (:nombre producto)) productos)
+
+      (defn my-map [predicado coleccion]
+        (reduce (fn [coleccion-transformada elemento]
+                  (let [elemento-transformado (predicado elemento)]
+                    (conj coleccion-transformada elemento-transformado)))
+                []
+                coleccion))
+
+      (my-map #(:nombre %) productos)
+    #+END_SRC
+** Ejemplos Interesantes
+*** Ejemplo 1 - Remover artículos
+    #+BEGIN_SRC clojure
+      ;; una explicación muy general sin tanto detalle, podría ser
+      ;; 1. definimos una variable X que le vinculamos una función anónima fn1 que espera un predicado como argumento
+      ;; 2. fn1 devuelve otra función anónima fn2 que espera una secuencia (colección ó vector) como argumento
+      ;; 3. fn2 aplica un reduce que devolverá un resultado (ya tenemos en mente que será un vector) e iterará sobre cada elemento artículo
+      ;; 4. si el artículo seleccionado cumple el predicado de fn1, devolvemos el resultado anterior (ignoramos el elemento, no lo usamos)
+      ;; 5. si el artículo no cumple el predicado de fn1 lo agregamos al resultado anterior (que es una secuencia a la que se le agrega un elemento, por eso usamos conj)
+      ;; 6. el reduce sólo le falta pasarle la semilla que será un vector vacío [] que será el resultado inicial (define el tipo de dato que devolverá el reduce)
+      ;; y la secuencia a recorrer que serán los artículos de fn2
+      (def remover-articulos-por
+        (fn [predicado]
+          (fn [articulos]
+            (reduce (fn [resultado articulo]
+                      (if (predicado articulo)
+                        resultado
+                        (conj resultado articulo)))
+                    []
+                    articulos))))
+
+      ;; pensamos en definir un predicado que se aplicará a un elemento,
+      ;; que será pasado a una función mas general que aplicará a una secuencia (colección o vector)
+      (def remover-remeras
+        (remover-articulos-por (fn [articulo] (= "remera" (:prenda articulo)))))
+
+      ;; ésta sería la estructura inicial de la que partiría la lógica,
+      ;; seguida de definir el predicado remover un articulo específico
+      ;; y luego definir el remover que reciba el criterio anterior
+      (def articulos-de-invierno [{:codigo 101 :prenda "remera" :color "rojo"}
+                                  {:codigo 102 :prenda "pantalon" :color "rojo"}
+                                  {:codigo 302 :prenda "pantalon" :color "rojo"}
+                                  {:codigo 401 :prenda "pantalon" :color "verde"}
+                                  {:codigo 900 :prenda "remera" :color "azul"}])
+
+      (remover-remeras articulos-de-invierno)
+    #+END_SRC
+*** Ejemplo 2 - Contador de Muletillas
+  #+BEGIN_SRC clojure
+    ;; usamos la estrategia bottom-up comenzamos desde lo específico hacia lo general
+    ;; 1. comenzamos desde lo específico el contar las palabras
+    ;; 2. luego con el contador de muletillas
+
+    ;; en la función anónima #() ocurre lo más importante
+    ;; 1. con el % (que es propia de la función anónima abreviada) obtenemos el valor asociado a la palabra
+    ;;
+    ;; 2. si no está entre las palabras repetidas la agregará a una estructura {} map vacía asociandole el valor nil,
+    ;; el % evaluará la palabra como una keyword que actúa como una función getter :hola :chaval según la palabra que analice
+    ;; por tanto el % devolverá nil por consiguiente el OR devolverá el 0 (en ese contexto el 0 es la única expresión que no es nil ni false)
+    ;; y luego inc lo incrementará evaluando 0+1
+    ;;
+    ;; 3. si está entre las palabras repetidas al evaluar % devolverá el número de veces que se repita y lo incrementará en 1,
+    ;; porque % se reemplaza por la keyword :hola :chaval que actúan como función getter
+    ;; y el OR devuelve el primer valor que sea distinto a nil ó falso
+    (defn contar-palabra [palabras-repetidas palabra]
+      (update-in palabras-repetidas [palabra] #(inc (or % 0))))
+
+    ;; 1. al reduce le pasamos la función que analizará cada palabra
+    ;;
+    ;; 2. el valor semilla será una estructura map vacía
+    ;; que sirve como acumulador (se agregan nuevas palabras)
+    ;; y sirve como un estado (contiene a cada palabra del texto, actualizar el estado sería aumentar las veces que se repiten las palabras)
+    ;;
+    ;; 3. por último pasamos una secuencia de palabras (no importa si es vector ó lista, porque las trata como una secuencia)
+    (defn contador-muletillas [texto]
+      (reduce contar-palabra {} (clojure.string/split texto #" ")))
+
+    (contador-muletillas "hola chaval como estas che che bien y vos?")
+  #+END_SRC
+*** Ejemplo 4 - Estadísticas de un Diario Digital
+    #+BEGIN_SRC clojure
+      (def historico-secciones-visitadas [{:nombre "noticias" :evento "click" :tiempo-de-lectura 200 :timestamp 140}
+                                          {:nombre "humor" :evento "click" :tiempo-de-lectura 100 :timestamp 141}
+                                          {:nombre "politica" :evento "click" :tiempo-de-lectura 900 :timestamp 143}
+                                          {:nombre "tecnología" :evento "hover" :tiempo-de-lectura 600 :timestamp 148}])
+
+      ;; secciones que llevan menos tiempo de lectura
+      (defn tiempo-de-lectura-rapida? [seccion]
+        (< (:tiempo-de-lectura seccion) 500))
+
+      (reduce (fn [secciones seccion]
+                (if (tiempo-de-lectura-rapida? seccion)
+                  (conj secciones seccion)
+                  secciones))
+              []
+              historico-secciones-visitadas)
+
+      ;; versión anterior simplificada usando filter y función anónima #()
+      (filter #(tiempo-de-lectura-rapida? %) historico-secciones-visitadas)
+
+      ;; tiempo total requerido para leer todas las secciones
+      (reduce (fn [tiempo-total-lectura seccion]
+                (+ tiempo-total-lectura
+                   (:tiempo-de-lectura seccion)))
+              0
+              historico-secciones-visitadas)
+
+      ;; versión anterior simplificada usando map
+      (reduce +
+              (map :tiempo-de-lectura
+                   historico-secciones-visitadas))
+
+      ;; estadistica tiempo total requerido para todas las secciones + cantidad de clicks
+      (defn seccion-clickeada? [seccion]
+        (= (:evento seccion) "click"))
+
+      (defn contador-de-clicks [cantidad seccion]
+        (+ cantidad
+           (if (seccion-clickeada? seccion) 1 0)))
+
+      (defn tiempo-lectura-acumulado [tiempo-total seccion]
+        (+ tiempo-total
+           (:tiempo-de-lectura seccion)))
+
+      (reduce (fn [{:keys [tiempo-lectura-total cantidad-clicks]} seccion]
+                (let [sumatoria-tiempo-lectura (tiempo-lectura-acumulado tiempo-lectura-total seccion)
+                      sumatoria-clicks (contador-de-clicks cantidad-clicks seccion)]
+                  {:tiempo-lectura-total sumatoria-tiempo-lectura
+                   :cantidad-clicks sumatoria-clicks}))
+              {:tiempo-lectura-total 0
+               :cantidad-clicks 0}
+              historico-secciones-visitadas)
+
+      ;; estadistica tiempo total requerido para todas las secciones + cantidad de clicks + sección de lectura más rápida
+      (defn seccion-de-lectura-mas-rapida [seccion otra-seccion]
+        (if (< (:tiempo-de-lectura seccion) (:tiempo-de-lectura otra-seccion))
+          seccion
+          otra-seccion))
+
+      (reduce (fn [{:keys [tiempo-lectura-total cantidad-clicks seccion-lectura-rapida]} seccion]
+                (let [sumatoria-tiempo-lectura (tiempo-lectura-acumulado tiempo-lectura-total seccion)
+                      sumatoria-clicks (contador-de-clicks cantidad-clicks seccion)
+                      seccion-rapida (seccion-de-lectura-mas-rapida seccion seccion-lectura-rapida)]
+                  {:tiempo-lectura-total sumatoria-tiempo-lectura
+                   :cantidad-clicks sumatoria-clicks
+                   :seccion-lectura-rapida seccion-rapida}))
+              {:tiempo-lectura-total 0 :cantidad-clicks 0
+               :seccion-lectura-rapida (first historico-secciones-visitadas)}
+              historico-secciones-visitadas)
+    #+END_SRC
+*** TODO Ejemplo 3 - Aplicación instalada más utilizada
+    #+BEGIN_SRC clojure
+      (def aplicaciones-instaladas [{:nombre "whatsapp" :memoria-requerida 10 :tiempo-semanal-utilizado [10 10 10 10 10 50 50]}
+                                 {:nombre "instagram" :memoria-requerida 30 :tiempo-semanal-utilizado [50 50 50 30 30 100 100]}
+                                 {:nombre "youtube" :memoria-requerida 2 :tiempo-semanal-utilizado [10 10 10 10 10 1 1]}
+                                 {:nombre "gmail" :memoria-requerida 2 :tiempo-semanal-utilizado [1 1 1 1 1 1 1]}])
+
+      (defn tiempo-semanal-total [aplicacion]
+        (reduce + (:tiempo-semanal-utilizado aplicacion)))
+
+      ;; TODO: posible refactor utilizando función (filter)
+      (defn aplicacion-mas-utilizada [lista-aplicaciones]
+        (:nombre (reduce (fn [aplicacion siguiente-aplicacion]
+                           (if (> (tiempo-semanal-total aplicacion) (tiempo-semanal-total siguiente-aplicacion))
+                             aplicacion
+                             siguiente-aplicacion))
+                         (first lista-aplicaciones)
+                         lista-aplicaciones)))
+
+      (aplicacion-mas-utilizada aplicaciones-instaladas)
+    #+END_SRC
+** Referencias
+*** Referencias Extra-oficiales
+    1. [[https://levelup.gitconnected.com/reducers-in-clojure-c088a5627412][Reducers in Clojure (By Functional Human)]]
+    2. [[https://ericnormand.me/article/a-reduce-example-explained][A reduce example explained (ericnormand.me)]]
+

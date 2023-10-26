@@ -1,0 +1,133 @@
+#+BEGIN_COMMENT
+Pendiente seguir...
+https://www.braveclojure.com/do-things/
+https://www.braveclojure.com/core-functions-in-depth/
+
+seguir con..
+https://www.braveclojure.com/core-functions-in-depth/#Exercises
+(aún no hiciste ningún ejercicio de esto ultimo)
+#+END_COMMENT
+
+
+#+BEGIN_COMMENT
+https://clojure.tgenedavis.com/ (tiene tutoriales de redis+clj, react+clj)
+#+END_COMMENT
+
+#+BEGIN_COMMENT
+Agregar conceptos de inmutabilidad
+https://dev.to/quoll/immutable-vars-and-clojure-3nh8
+https://dev.to/quoll/more-immutability-and-clojure-4cdk
+https://www.infoq.com/articles/in-depth-look-clojure-collections/
+https://clojureverse.org/t/when-do-we-really-need-efficient-immutable-data-structures/7536/6
+#+END_COMMENT
+
+#+BEGIN_COMMENT
+Reutilizar estos conceptos para javascript, basandote en clojure
+https://platzi.com/clases/1807-scope/25875-que-es-un-closure/
+https://es.javascript.info/closure
+https://www.variablenotfound.com/2012/10/closures-en-javascript-entiendelos-de.html
+#+END_COMMENT
+
+#+BEGIN_COMMENT
+Agregar referencias con más detalle
+https://clojure.org/guides/destructuring
+https://clojure.org/guides/learn/hashed_colls
+#+END_COMMENT
+* Atajos Spacemacs
+** Desarrollo
+   |-------------+----------------------------------------------|
+   | Atajo       | Descripción                                  |
+   |-------------+----------------------------------------------|
+   | ~SPC ; ;~   | Comentar linea actual del código fuente      |
+   | ~C-c C-w s~ | Cambiar de workspace                         |
+   | ~C-c C-w a~ | Crear de workspace                           |
+   | ~C-c C-p a~ | Agregar proyecto dentro del workspace actual |
+   | ~C-c C-p d~ | Remover proyecto del workspace actual        |
+   |-------------+----------------------------------------------|
+** Gestor de Buffers/Windows
+   |-------------+---------------------------------------------------------------------|
+   | Atajo       | Descripción                                                         |
+   |-------------+---------------------------------------------------------------------|
+   | ~SPC w .~   | Abrir menú del gestor de buffers entre ventanas                     |
+   | ~SPC w . q~ | Cerrar menú del gestor de buffers/ventanas                          |
+   | ~SPC w m~   | Maximizar el buffer actual (repetir para volver al estado anterior) |
+   |-------------+---------------------------------------------------------------------|
+   | ~SPC w s~   | Dividir el buffer verticalmente (lo coloca abajo)                   |
+   | ~SPC w v~   | Dividir el buffer actual horizontalmente                            |
+   | ~SPC w F~   | Abrir un nuevo marco/frame (ventana)                                |
+   |-------------+---------------------------------------------------------------------|
+   | ~SPC w . d~ | Cerrar el buffer actual                                             |
+   | ~SPC w . J~ | Mover el buffer abajo                                               |
+   | ~SPC w . K~ | Mover el buffer arriba                                              |
+   | ~SPC w . H~ | Mover el buffer a izquierda                                         |
+   | ~SPC w . L~ | Mover el buffer a derecha                                           |
+   |-------------+---------------------------------------------------------------------|
+** Cider
+   #+BEGIN_COMMENT
+   Debemos validar si la siguiente secuencia de comandos se cumple siempre,
+   por el momento funciona..
+   1. Iniciamos el servidor cider ~M-x cider-jack-in~
+   1. Abrimos el buffer con REPL ~, s a~
+   2. Cargamos el buffer actual en el REPL ~, s b~
+   3. Cargamos el Namespace al REPL ~, s n~
+   #+END_COMMENT
+
+   |---------------------+----------------------------------------------------------------------------|
+   | Atajo               | Descripción                                                                |
+   |---------------------+----------------------------------------------------------------------------|
+   | ~M-x cider-jack-in~ | Iniciar el servidor Cider                                                  |
+   | ~, s a~             | Abrir el Buffer REPL usando el archivo .clj actual                         |
+   | ~, s b~             | Cargar el Buffer actual al REPL (si actualizamos el buffer)                |
+   | ~, s n~             | Enviar el Namespace actual al REPL                                         |
+   | ~, s f~             | Evaluar la función actual en el Buffer REPL (/útil para probar funciones/) |
+   | ~, e f~             | Evaluar la función actual                                                  |
+   | ~, e e~             | Evaluar la última expresion-s (a partir de la posición del cursor)         |
+   |---------------------+----------------------------------------------------------------------------|
+* Referencias
+** Referencias Oficiales
+   1. [[https://clojure.org/guides/learn/clojure][Learn Clojure (clojure.org)]]
+   2. [[https://develop.spacemacs.org/layers/+lang/clojure/README.html][Clojure layer (spacemacs.org)]]
+   3. [[https://clojure.org/community/tools][Clojure Tools (clojure.org)]]
+** Referencias Extraoficiales
+   1. [[https://flexiana.com/2019/07/emacs-for-clojure-cheatsheet][Emacs/Spacemacs for clojure Cheatsheet (flexiana.com)]]
+   2. [[https://www.braveclojure.com/basic-emacs/][How to use emacs as Clojure Editor (braveclojure.com)]]
+
+   #+BEGIN_COMMENT
+   https://kimh.github.io/clojure-by-example/#hello-world parece copado (?)
+   #+END_COMMENT
+** Issues
+   1. https://stackoverflow.com/questions/12518320/counting-only-truthy-values-in-a-collection
+   2. https://stackoverflow.com/questions/38759125/how-to-sum-all-values-in-a-vector-or-maps
+   3. https://stackoverflow.com/questions/3249334/test-whether-a-list-contains-a-specific-value-in-clojure
+** Referencias Youtube
+   1. [[https://www.youtube.com/watch?v=tzj1y4hNwrA&ab_channel=CommunityDeveloper][Spacemacs basics for Clojure development (By Community Developer)]]
+   2. [[https://www.youtube.com/watch?v=NDrpclY54E0&ab_channel=Practicalli][REPL driven development with Clojure+Spacemacs+CIDER (By Practicalli)]]
+   2. [[https://www.youtube.com/watch?v=cadXnbAEfUo&ab_channel=CommunityDeveloper][Spacemacs Helm transient state (By Community Developer]]
+** Tutoriales
+   1. [[https://markm208.github.io/cljbook/][An animated Introduction to Clojure (By markm208)]]
+   2. [[https://practical.li/clojure/reference/clojure-syntax/syntax.html][Syntax Clojure (practical.li)]]
+   3. https://yogthos.net/ClojureDistilled.html
+   4. https://exercism.org/tracks/clojure 
+   5. http://clojurekoans.com/
+   6. https://4clojure.oxal.org/ 
+   7. https://tryclojure.org/
+
+   #+BEGIN_COMMENT
+   https://dev.to/jorgetovar/clojure-101-2i2b
+
+   https://exercism.org/tracks/clojure/concepts/basics
+
+   https://www.youtube.com/watch?v=P-OzjJ2Aumg&t=40s&ab_channel=OsmanCea
+   https://www.youtube.com/watch?v=ro7SFEufBmo&t=16s&ab_channel=OsmanCea
+   https://www.youtube.com/watch?v=iPLsuw9U9Ek&ab_channel=OsmanCea
+   #+END_COMMENT
+* Libros Referentes
+  1. [[https://livebook.manning.com/book/clojure-the-essential-reference/chapter-12/v-30/8][Clojure The Essential Reference, Vectors (livebook.manning.com)]]
+  2. [[https://doc.lagout.org/programmation/Lisp/Clojure/The%20Joy%20of%20Clojure.pdf][They Joy of Clojure (doc.lagout.org)]]
+  3. [[https://www.braveclojure.com/do-things/][A clojure Crash Course (braveclojure.com)]]
+  4. [[https://livebook.manning.com/book/get-programming-with-clojure/welcome/v-2/8][Get Programming with Clojure MEAP (livebook.manning.com)]]
+
+  #+BEGIN_COMMENT
+  https://realtoughcandy.com/best-clojure-books/
+  https://www.linuxlinks.com/excellent-free-books-learn-clojurescript/
+  #+END_COMMENT

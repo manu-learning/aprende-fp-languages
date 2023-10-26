@@ -1,0 +1,466 @@
+#+TITLE: Secuencias
+* Secuencias
+** Conceptos
+   #+BEGIN_QUOTE
+    Clojure trata las listas, vectores y set como secuencias
+    por ende en todas podemos utilizar funciones para secuencias
+
+    Algunas de las operaciones incluidas en la biblioteca de secuencias son:
+    - map, reduce, take-while, drop-while, filter
+    - some
+    - sort, sort-by
+    - concat
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Listas, Vectores y Sets como Secuencias
+  #+BEGIN_SRC clojure
+    ;; el resultado de evaluar esta Lista será una secuencia, es lo que hace por defecto clojure
+    (seq '(1 2 3))
+
+    ;; el resultado de evaluar este Vector será una secuencia, es lo que hace por defecto clojure
+    (seq [1 2 3])
+
+    ;; el resultado de evaluar este Set será una secuencia, es lo que hace por defecto clojure
+    (seq #{1 2 3})
+  #+END_SRC
+* Map
+** Ejemplos
+*** Ejemplo 1 - Map con funciones básicas
+    #+BEGIN_SRC clojure
+      (map inc [1 2 3])
+
+      (map inc '(1 2 3))
+
+      (map str ["a" "b" "c"] ["A" "B" "C"])
+    #+END_SRC
+*** Ejemplo 2 - Map con varios vectores como argumentos
+    #+BEGIN_SRC clojure
+      (def humano-tiempo-semanal-dormido [0.6 0.6 0.5 0.6 0.8 1 1])
+      (def programador-tiempo-semanal-dormido [0.2 0.1 0.1 0.2 0.2 0 0])
+
+      (defn tiempo-semanal-dormido-data
+        [humano programador]
+        {:humano humano
+         :programador programador})
+
+      (map tiempo-semanal-dormido-data humano-tiempo-semanal-dormido programador-tiempo-semanal-dormido)
+    #+END_SRC
+*** Ejemplo 3 - Map con varias funciones como argumentos
+    #+BEGIN_SRC clojure
+      ;; usamos la forma abreviada de la función anónima
+      ;; que no requiere mencionar el nombre de los argumentos ni de la función anónima
+      (def sumatoria #(reduce + %))
+      (def promedio #(/ (sumatoria %) (count %)))
+
+      ;; comentamos las siguientes definiciones que usan función anónima para que se note la diferencia con las anteriores
+      (comment "
+        (def sumatoria
+            (fn [coleccion] (reduce + coleccion)))
+
+        (def promedio
+          (fn [numeros]
+            (/ (sumatoria numeros) (count numeros))))
+        ")
+
+      ;; (sumatoria [1 1 3])
+      ;; (promedio [1 1 3])
+
+      (defn estadisticas
+        "Recibe una secuencia de numeros y les aplica las funciones sumatoria, promedio y count"
+        [numeros]
+        (map #(% numeros) [sumatoria promedio count]))
+
+      (def equipo-newbee-partidas-jugadas [500 250 100])
+      (def equipo-fnatic-partidas-jugadas [100 50 40])
+
+      (estadisticas equipo-newbee-partidas-jugadas)
+      (estadisticas equipo-fnatic-partidas-jugadas)
+    #+END_SRC
+*** Ejemplo 4 - Map usando keywords como funciones
+    #+BEGIN_SRC clojure
+      (def reparto-serie-startrek
+        [{:personaje "William T. Riker" :actor "Jonathan Frakes"}
+         {:personaje "Jean-Luc Picard" :actor "Patrick Steward"}
+         {:personaje "Worf" :actor "Michael Dorn"}
+         {:personaje "Deanna Troi" :actor "Marina Sirtis"}
+         {:personaje "Beverly Crusher" :actor "Gates McFadden"}
+         {:personaje "Data" :actor "Brent Spiner"}])
+
+      (map :actor reparto-serie-startrek)
+    #+END_SRC
+* Reduce
+** Ejemplos
+*** Ejemplo Básico - Map y función Assoc
+    #+BEGIN_SRC clojure
+      ;; estructura map con dos elementos de la forma :key value
+      {:min 10 :max 20}
+
+      ;; creamos una nueva estructura map a partir de un map vacío
+      ;; y le asociamos un elemento de la forma :key value
+      (assoc {} :min 10)
+
+      ;; creamos un nuevo map a partir de un map con 1 elemento
+      ;; y le asociamos un segundo elemento
+      (assoc {:min 10} :max 20)
+
+      ;; devolvemos un nuevo map en base al map vacío
+      ;; y le agregamos un elemento con clave :dba y valor 200
+      (assoc {} :gerente 200)
+    #+END_SRC
+*** Ejemplo 1 - Reduce que devuelve una nueva estructura map
+    #+BEGIN_QUOTE
+    Explicación un poco más detallada, aunque el comentario del código lo resume
+    - El 1º parámetro del ~reduce~ es una *función anónima* ~fn~ que devuelve un nuevo ~map~
+      con las mismas keywords del map original pasado al ~reduce~, pero actualiza sus valores incrementados en 1
+    - El 2º parámetro del ~reduce~ será la *semilla*, un map vacío ~{}~
+      que será el 1º parámetro de la *función anónima* ~fn~
+    - El 3º parámetro del ~reduce~ es un map que será recorrerido por el reduce elemento por elemento
+      y a éste aplicará la *función anónima* ~fn~
+    #+END_QUOTE
+
+    #+BEGIN_SRC clojure
+      ;; devolvemos un nuevo map con las mismas keywords
+      ;; pero con los valores actualizados (incrementados en 1)
+      (reduce (fn [nuevo-map [clave valor]]
+                (assoc nuevo-map clave (inc valor)))
+              {}
+              {:min 10 :max 20})
+
+      ;; el reduce de arriba hace esto
+      (assoc (assoc {} :min 10)
+             :max 20)
+    #+END_SRC
+*** Ejemplo 2 - Reduce para filtrar una estructura map por valor
+    #+BEGIN_SRC clojure
+      (def empleados-salarios {:programador 250
+                               :analista 200
+                               :dba 200
+                               :gerente 10000})
+
+      ;; - comportamiento similar a un filter, recorremos cada elemento :clave valor y si se cumple el criterio
+      ;; lo agregamos en el map
+      ;; - si (< valor 500) es verdadero, con assoc agrega el elemento al nuevo map y lo devuelve
+      ;; - si (< valor 500) es falso, no agrega elementos y devuelve el map con los elementos agregados por el momento
+      ;; para que el siguiente elemento hace verdadero la condición entonces se agrega al map
+      (reduce (fn [nuevo-map [clave valor]]
+                (if (< valor 500)
+                  (assoc nuevo-map clave valor)
+                  nuevo-map))
+              {}
+              empleados-salarios)
+
+      ;; es necesario devolver en la rama-else el map porque si no se encadenaran de la siguiente manera
+      (assoc (assoc (assoc {} :programador 250)
+                    :analista 200)
+             :dba 200)
+    #+END_SRC
+* Take Take-while y Drop Drop-while
+** Conceptos
+   #+BEGIN_QUOTE
+   Si no queremos analizar todos los datos de una secuencia,
+   entonces usar ~take-while~ es más eficiente que ~filter~
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo Básico
+    #+BEGIN_SRC clojure
+      ;; devuelve la secuencia con los primeros n elementos
+      (take 3 [1 2 3 4 5 6 7 8 9])
+
+      ;; devuelve la secuencia con los primeros n elementos removidos
+      (drop 3 [1 2 3 4 5 6 7 8 9])
+    #+END_SRC
+*** Ejemplo 1 - take-while
+    #+BEGIN_SRC clojure
+      ;; vector con estructuras map que tienen dos elementos de la forma :clave valor
+      (def peliculas-sugeridas
+        [{:mes-estreno 1 :titulo "Carter"}
+         {:mes-estreno 1 :titulo "Memory"}
+         {:mes-estreno 2 :titulo "Gold"}
+         {:mes-estreno 2 :titulo "El contratista"}
+         {:mes-estreno 3 :titulo "La ciudad perdida"}
+         {:mes-estreno 4 :titulo "Proyecto Adam"}
+         {:mes-estreno 4 :titulo "La bestia"}])
+
+      ;; - usamos la keyword :mes-estreno como función para obtener el valor de una estructura map
+      ;; - devolvemos las primeras 3 películas que hagan verdadera la función predicado
+      ;; que será la función anónima pasada como segundo parámetro
+      ;; - la función anónima abreviada el % es lo mismo que %1 que es el argumento sin nombre,
+      ;; el % obtiene el map {:clave1 valor1 :clave2 valor2} y la keyword usada como función obtendrá el valor asociado
+      ;; - luego que la keyword como función devuelva un valor se compará (< valor 3)
+      (take-while #(< (:mes-estreno %) 3) peliculas-sugeridas)
+
+      ;; ejemplo de usar una keyword como función, devolverá 4
+      (:mes-estreno {:mes-estreno 4 :titulo "Proyecto Adam"})
+
+      ;; otro ejemplo, devolverá el string
+      (:titulo {:mes-estreno 4 :titulo "Proyecto Adam"})
+    #+END_SRC
+*** Ejemplo 2 - drop-while
+    #+BEGIN_SRC clojure
+      (def peliculas-sugeridas
+        [{:mes-estreno 1 :titulo "Carter"}
+         {:mes-estreno 1 :titulo "Memory"}
+         {:mes-estreno 2 :titulo "Gold"}
+         {:mes-estreno 2 :titulo "El contratista"}
+         {:mes-estreno 3 :titulo "La ciudad perdida"}
+         {:mes-estreno 4 :titulo "Proyecto Adam"}
+         {:mes-estreno 4 :titulo "La bestia"}])
+
+      ;; - supongamos que estamos en marzo, no tiene sentido mostrar las primeras 3 de enero, febrero
+      ;; - usamos drop-while en vez de filter porque no queremos que analice todas las películas
+      ;; porque fueron cargadas en orden por fecha y queremos que se respete
+      (drop-while #(< (:mes-estreno %) 3) peliculas-sugeridas)
+    #+END_SRC
+* Filter y Some
+** Ejemplos
+*** Ejemplo 1
+    #+BEGIN_SRC clojure
+      (def libros-sugeridos [{:titulo "Dracula" :categoria "horror" :sugerencias 10}
+                  {:titulo "It" :categoria "horror" :sugerencias 3}
+                  {:titulo "The outsider" :categoria "horror" :sugerencias 15}
+                  {:titulo "Ring" :categoria "horror" :sugerencias 19}
+                  {:titulo "Jane Eyre" :categoria "literatura" :sugerencias 20}
+                  {:titulo "Lolita" :categoria "literatura" :sugerencias 0}
+                  {:titulo "Moby Dick" :categoria "literatura" :sugerencias 100}])
+
+      ;; analizará todas las estructuras map del vector y devolverá sólo las que tengan más de 10 sugerencias
+      (filter #(> (:sugerencias %) 10) libros-sugeridos)
+
+      ;; devolverá un valor booleano si se cumple ó no si existe al menos un libro con más de 500 sugerencias
+      (some #(> (:sugerencias %) 500) libros-sugeridos)
+    #+END_SRC
+*** Ejemplo 2 - Devolver el primer elemento que hace verdadero a Some
+    #+BEGIN_SRC clojure
+      ;; devolvemos el primer elemento que haga verdadera la condición que exista al menos un libro con más de 10 sugerencias
+      ;; el elemento se devuelve por el % de la función anónima que se evalúa luego que se cumple (> (:sugerencias %) 10)
+      (some #(and (> (:sugerencias %) 10) %) libros-sugeridos)
+    #+END_SRC
+*** Ejemplo 3 - Encontrar un elemento por id de un vector de estructuras map asociativas
+    #+BEGIN_SRC clojure
+      (def correo-juan {:mensajes [{:id 100 :leido? false}
+                                   {:id 101 :leido? false}
+                                   {:id 102 :leido? false}
+                                   {:id 103 :leido? false}
+                                   {:id 105 :leido? false}]})
+
+      (defn mensaje-por-id [id mensajes]
+        (first
+         (filter #(= id (:id %)) mensajes)))
+
+      (mensaje-por-id 102 (:mensajes correo-juan))
+    #+END_SRC
+* Sort y Sort-by
+** Ejemplos
+*** Ejemplo 1 - Ordenar Secuencias Numéricas y de Strings
+    #+BEGIN_SRC clojure
+      ;; devolverá una secuencia ordenada de forma descendente
+      (sort [3 2 1])
+
+      ;; devolverá una secuencia ordenada por longitud de las cadenas de forma descendente
+      (sort-by count ["x" "ccc" "a"])
+    #+END_SRC
+*** Ejemplo 2 - Ordenar Secuencias por keyword
+    #+BEGIN_SRC clojure
+      (def libros-sugeridos [{:titulo "Dracula" :categoria "horror" :sugerencias 10}
+                             {:titulo "It" :categoria "horror" :sugerencias 3}
+                             {:titulo "The outsider" :categoria "horror" :sugerencias 15}
+                             {:titulo "Ring" :categoria "horror" :sugerencias 19}
+                             {:titulo "Jane Eyre" :categoria "literatura" :sugerencias 20}
+                             {:titulo "Lolita" :categoria "literatura" :sugerencias 0}
+                             {:titulo "Moby Dick" :categoria "literatura" :sugerencias 100}])
+
+      ;; ordenará de forma descendente y númerica mediante la keyword :sugerencias
+      (sort-by :sugerencias libros-sugeridos)
+
+      ;; ordenará de forma descendente y alfabética mediante la keyword :titulo pero luego quedará en orden ascendente
+      (reverse (sort-by :titulo libros-sugeridos))
+    #+END_SRC
+* TODO Concat - Agrupar Colecciones
+** Conceptos
+   - ~concat~ agrupa *elementos de colecciones* y devuelve una *secuencia perezosa* (~lazy-seq~)
+
+   #+BEGIN_QUOTE
+   Otra forma de pensarlo sería que agrega elementos de una secuencia al final de otra secuencia
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo Básico
+    #+BEGIN_SRC clojure
+      ;; agregamos [3 4] al final de la secuencia [1 2]
+      (concat [1 2] [3 4])
+
+      ;; mismo comportamiento que con los números
+      (concat ["vaca" "perro"] ["tomate" "pera"])
+
+      (concat [1 2] [3 4] [5 6])
+
+      (concat (list 1 2) (list 3 4))
+
+      (concat '(1 2) '(3 4))
+    #+END_SRC
+*** Ejemplo - Concat devuelve una secuencia perezosa
+    #+BEGIN_SRC clojure
+      ;; devolverá (9 1 2 3 4) en vez de (1 2 3 4 9)
+      (conj (concat [1 2] [3 4]) 9)
+
+      ;; éste si devolverá (1 2 3 4 9)
+      (conj [1 2 3 4] 9)
+    #+END_SRC
+** Referencias
+*** Referencias Extraoficiales
+    1. [[https://stuartsierra.com/2015/04/26/clojure-donts-concat][Concat, the lazily-ticking time bomb (stuartsierra.com)]]
+* TODO Secuencia Perezosa (Lazy Seq)
+** Conceptos
+   #+BEGIN_QUOTE
+   Funciones comunes que devuelven una *secuencia perezosa* y el cuerpo de la función no es evaluado
+   hasta que otra función solicite sus resultados
+   - map
+   - for
+
+   Funciones que devuelven NO devuelven una *secuencia perezosa* y son evaluadas
+   - doseq
+
+   Funciones que obligan evaluar el cuerpo de las funciones que devuelven una *secuencia perezosa*
+   - dorun
+   #+END_QUOTE
+** dorun y doseq
+    - ~dorun~ obliga a evaluar el cuerpo de una función que devuelve una *secuencia perezosa* (Ej. for, map, etc...)
+    - ~doseq~ tiene comportamiento similar a ~for~ pero no devuelve una *secuencia perezosa*
+    - ~doseq~ soporta los mismos modificadores que ~for~ (Ej. ~:while~ ~:when~ ~:let~)
+** TODO dorun Vs doall
+** Ejemplos Basicos
+*** Ejemplo 1 - map devuelve una secuencia perezosa
+    #+BEGIN_SRC clojure
+      ;; map devuelve una lazy seq (secuencia perezosa), por tanto el println que debería aplicar a sus elementos no será evaluado
+      ;; (porque nadie consume lo que devuelve, Ej. take, take-while, ...)
+      (defn lazy-imprimir-numeros
+        [n]
+        (map println (range n))
+        (println "Numeros impresos " n))
+
+      ;; mapv y run!
+      ;; - no devuelven una secuencia perezosa, por tanto el println es evaluado y aplicado a cada elemento devuelto por range
+      (defn imprimir-numeros
+        [n]
+        (mapv println (range n))
+        (println "Numeros impresos " n))
+
+      (defn imprimir-numeros
+        [n]
+        (run! println (range n))
+        (println "Numeros impresos " n))
+
+      (lazy-imprimir-numeros 9)
+      (imprimir-numeros 9)
+    #+END_SRC
+*** Ejemplo 2 - for devuelve una secuencia perezosa
+    #+BEGIN_SRC clojure
+      ;; devolverá 10 valores
+      (for [num (range 0 10)]
+        (println num))
+
+      ;; devolverá 10 valores
+      (do (for [num (range 0 10)]
+        (println num)))
+
+      ;; pero si queremos ejecutar varias expresiones con do..
+      ;;
+      ;; - en este caso, la última expresión evaluada es el println
+      ;; al evaluar éste do, sólo  devolvera "listo"
+      ;; - el for devolverá una secuencia perezosa,
+      ;; y como no hay una función que requiera su resultado
+      ;; no se ejecuta el cuerpo del for..
+      (do
+            (for [num (range 10)]
+              (println num))
+            (println "listo"))
+
+      ;; con dorun, se ejecuta el cuerpo del for
+      ;; (sólo debemos pasarle la secuencia perezosa que devuelve el for)
+      (do (dorun
+           (for [num (range 10)]
+             (println num)))
+           (println "listo"))
+    #+END_SRC
+*** Ejemplo 3 - doseq para simular interacción con una API Rest
+    #+BEGIN_SRC clojure
+      (defn send-to-api [usuario]
+        (println "Enviando a la API información del usuario.. " usuario))
+
+      (let [usuarios [{:nombre "Kevin" :edad 29}
+                      {:nombre "Samuel" :edad 30}
+                      {:nombre "Ramiro" :edad 18}]]
+            (doseq [usuario usuarios]
+              (send-to-api usuario))
+            (println "Listo"))
+    #+END_SRC
+** Ejemplos
+*** Ejemplo 1 - Eficiencia de usar Secuencias Perezosas
+    #+BEGIN_SRC clojure
+      (def proyectos-militares-database
+        {0 {:titulo "Proyecto X" :tiene-clave false :publicado true}
+         1 {:titulo "Proyecto robot humanoide" :tiene-clave true :publicado false}
+         2 {:titulo "Proyecto ataque extraterrestre" :tiene-clave true :publicado false}
+         3 {:titulo "Proyecto demonios entre nostros" :tiene-clave true :publicado false}
+         4 {:titulo "Proyecto mutantes entre nosotros" :tiene-clave false :publicado true}})
+
+      (defn proyecto-militar-detalle
+        [codigo-seguridad]
+        (Thread/sleep 1000)
+        (get proyectos-militares-database codigo-seguridad))
+
+      ;; (proyecto-militar-detalle 1)
+
+      (defn vulnerable?
+        [registro]
+        (and (:publicado registro)
+             (not (:tiene-clave registro))
+             registro))
+
+      (defn detectar-vulnerabilidad-del-sistema
+        [codigos-de-seguridad]
+        (first (filter vulnerable?
+                       (map proyecto-militar-detalle codigos-de-seguridad))))
+
+      ;; cada vez que lo evaluemos tardará 5ms aprox.
+      (time (detectar-vulnerabilidad-del-sistema (range 0 5)))
+
+      ;; - map y range devuelven una secuencia perezosa,
+      ;; por tanto al evaluar esta definición tardará 0.2ms aprox. casi nada (a menos que otra función acceda/solicite sus elementos)
+      ;; - no se evaluará la función proyecto-militar-detalle que aplica el map,
+      ;; hasta que otra función consuma/utilice/acceda a los elementos que el map genera/devuelve
+      ;; (Ej. first, take, take-while, ...)
+      (time (def lazy-mapped-details (map proyecto-militar-detalle (range 0 50))))
+
+      ;; si accedemos a los elementos que genera map, será evaluado una única vez
+      ;; la 1º vez lo evaluemos se demorará 50ms aprox. (porque pusimos que itere entre 50 elementos del range)
+      ;; la 2º vez que lo evaluemos demorará 0.10ms porque ya se vinculó al nombre lazy-mapped-details
+      (time (first lazy-mapped-details))
+      (time (take 4 lazy-mapped-details))
+    #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://clojure-doc.org/articles/language/laziness/][Clojure Guides, Laziness in Clojure (clojure-doc.org)]]
+    2. [[https://clojure.org/reference/lazy][Making Clojure Lazier (cojure.org)]]
+*** Referencias Extraoficiales
+    1. [[https://otee.dev/2022/01/17/lazy-clojure.html][Laziness in Clojure (otee.dev)]]
+    2. [[https://medium.com/@pwentz/laziness-in-clojure-3d83645bf7f3][Laziness in clojure (by Pat Wentz)]]
+* Secuencias Infinitas
+** TODO Ejemplos
+*** Ejemplo 1
+    #+BEGIN_SRC clojure
+      (cons 0 '(1 2 3))
+
+
+      (concat (take 10 (repeat  "x ")) [".!"])
+
+      (take 5 (repeatedly (fn [] (rand-int 10))))
+
+
+      (defn numeros-pares
+        ([] (numeros-pares 0))
+        ([n] (cons n (lazy-seq (numeros-pares (+ n 2))))))
+
+      (take 20 (numeros-pares))
+    #+END_SRC
+
+
