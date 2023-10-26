@@ -1,0 +1,25 @@
+* Ejemplos
+  #+BEGIN_SRC elisp
+    ;; Nota: la expresión .1 es lo misma que 0.1
+
+    ;; truncate devuelva la parte entera de un número flotante
+    (truncate 50.01)
+    (truncate .10)
+
+    ;; floor redondea para bajo
+    (floor 50.01)
+    (floor .1)
+
+    ;; ceiling redondea para arriba
+    (floor 50.01)
+    (ceiling .1)
+
+    ;; signum indica con los valores 1 0 -1 si un número es positivo, negativo ó cero
+    (signum 50)
+    (signum 0)
+    (signum -10)
+  #+END_SRC
+* Referencias
+  1. https://www.davidam.com/software/primitivas.html
+  2. http://www.lispworks.com/documentation/HyperSpec/Body/f_floorc.htm
+  3. https://www.tutorialspoint.com/lisp/index.htm

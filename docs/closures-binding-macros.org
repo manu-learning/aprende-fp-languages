@@ -1,0 +1,677 @@
+#+TITLE: Closures + Binding + Macros
+* Intro
+   - Elisp tiene como característica de utilizar *Dynamic Binding* y *Lexical Binding* (/éste último está desactivado por default en emacs/)
+   - Al habilitar el *Lexical Binding* en emacs
+     1. las *funciones anónimas* se convierten en *closures*
+     2. las funciones pueden capturar lo que se conoce por *ámbito léxico* que es más rápido que el *ámbito dinámico*
+
+   #+BEGIN_SRC elisp
+     ;; para habilitar los closures agregar la linea de abajo en ~/.emacs.d/init.el
+     (setq lexical-binding t)
+   #+END_SRC
+* Ambito (Scope) Vs Alcance (Extent)
+** Lexical Binding y su Alcance
+   #+BEGIN_QUOTE
+   Si habilitamos *lexical binding* entonces *alcance* de una variable (cuanto tiempo puede vivir)
+   puede durar apesar que finalice la ejecución del *constructor del binding*
+   esto ocurre con objetos especiales de lisp llamados *closures*
+   #+END_QUOTE
+
+   #+BEGIN_SRC elisp
+   ;; habilitamos el lexical binding
+   (setq lexical-binding t)
+
+   ;; ejecutamos una lambda que recibe un parámetro `x' y lo multiplica por si mismo
+   (lambda (x) (* x x))
+   ;; el resultado será: (closure (t) (x) (* x x))
+   
+   ;;((lambda (x) (* x x)) 2)
+   #+END_SRC
+** Ambito (Scope)
+   - El *ámbito* se refiere a que parte del código el *binding* (vínculo/enlace) puede ser accedido
+
+   #+BEGIN_QUOTE
+   Por ejemplo cuando definimos una función con que recibe dos parámetros ~(defun sumar (x y) (+ x y))~
+   estos dos parámetros existen sólo dentro del cuerpo de la función
+
+   Otro ejemplo si declaramos variables con ~let~ de la forma ~(let ((x 1) (y 2)) (+ x y))~
+   vinculamos un valor a esas variables que existen sólo dentro del cuerpo de let
+   #+END_QUOTE
+** Alcance (Extent)
+   - El *alcance* se refiere en que momento y por cuanto tiempo el *binding* (vínculo/enlace) existirá
+
+   #+BEGIN_QUOTE
+   Por ejemplo cuando definimos una función con que recibe dos parámetros ~(defun sumar (x y) (+ x y))~
+   estos dos parámetros existen mientras se esté ejecutando la llamada a la función
+
+   Otro ejemplo si declaramos variables con ~let~ de la forma ~(let ((x 1) (y 2)) (+ x y))~
+   vinculamos un valor a esas variables que existen mientras se esté ejecutando ~let~
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1
+    #+BEGIN_SRC elisp
+      ;; 1. definimos una variable `edad' y le asignamos el valor `60'
+      (defvar edad 60)
+
+      ;; 2. creamos una función getter que no recibe parámetros, pero en el cuerpo devuelve el valor de la variable `edad'
+      (defun getEdad ()
+        edad)
+
+      ;; 3. creamos una variable `edad' que existe sólo dentro del cuerpo de `let' y le asignamos el valor `30'
+      ;;
+      ;; aunque al principio le asignamos el valor `60' a `edad',
+      ;; al usar "dynamic binding" se usará el valor más reciente asignado a `edad' es decir el que definió `let'
+      (let ((edad 30))
+        (getEdad))
+
+      ;; 3. si invocamos la función getter, devolverá `60' porque el valor que se habia definido en `let' dejó de existir cuando `let' terminó de ejecutarse
+      (getEdad)
+    #+END_SRC
+*** Ejemplo 2
+    #+BEGIN_SRC elisp
+      ;; 1. aumenta en 1 el valor de `edad' y devuelve el nuevo valor de `edad' aumentado
+      (defun cumplirAños ()
+        (setq edad (1+ edad)))
+
+      ;; como usamos "dynamic binding" (default de emacs) el valor de la variable `edad'
+      ;; será el del "vínculo/enlace dinámico" creado más reciente a `edad' que es `30'
+      ;; que fué definido en `let' y vivirá/existirá sólo dentro de `let' (luego valdrá nuevamente `60')
+      (let ((edad 30))
+        (cumplirAños)
+        (cumplirAños))
+
+      (cumplirAños)
+
+      ;; ..................................................................................
+
+      ;; 1. definimos una función getter que devuelve el valor del símbolo `x'
+      (defun getx () x)
+
+      ;; 2. declaramos un símbolo `x' en el ámbito/scope de `let' y le asignamos el valor `5'
+      ;;
+      ;; cuando invoquemos `getx' devolverá el 5
+      (let ((x 5))
+        (getx))
+    #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Variable-Scoping.html][Variable Scoping (gnu.org)]]
+    2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Local-Variables.html][Local Variables (gnu.org)]]
+    3. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Variables.html][Variables (gnu.org)]]
+*** Referencias Extraoficiales
+    1. [[https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node43.html][Scope and Extent (cs.cmu.edu)]]
+    2. [[https://www.cs.man.ac.uk/~pjj/cs2111/ho/node14.html][Scope and Extent (cs.man.ac.uk)]]
+* Closures
+** Conceptos
+   - Un closure es un *objeto especial* que está _representado por una lista_ 
+   - La sintáxis de un closure es ~(closure ((nombreVariable . valor) t) (parametroLambda otroParametro) (cuerpoLambda))~
+   - Los elementos de un closure son
+     1) el primer elemento: es el símbolo especial ~closure~
+     2) el segundo elemento: es el *contexto léxico* (/Ej. las variables vinculadas/atadas con su valor/)
+     3) el tercer elemento: son los *parámetros de la función lambda* (/Ej. podría no recibir ningún parámetro y lo tomaría como nil/)
+     4) el cuarto elemento: es el *cuerpo de la función lambda* (/Ej. puede devolver el parámetro/)
+
+   #+BEGIN_QUOTE
+   A closure is a function that carries a record of the lexical environment that existed when the function was defined.
+   When it is invoked, any lexical variable references within its definition use the retained lexical environment.
+   In all other respects, closures behave much like ordinary functions; in particular, they can be called in the same way as ordinary functions. 
+   #+END_QUOTE
+
+   #+BEGIN_SRC elisp
+   (setq test (let ((foo "bar")) (lambda () foo)))
+   ;; el resultado de evaluar lo anterior es el siguiente closure:
+   ;; (closure ((foo . "bar") t) nil foo)
+
+   (setq test (let ((foo "bar")) (lambda (x) foo)))
+   ;; el resultado de evaluar lo anterior es el siguiente closure:
+   ;; (closure ((foo . "bar") t) (x) foo)
+   #+END_SRC
+** Ejemplos Básicos
+*** Ejemplo 1 - Crear un closure definiendo un símbolo y vinculandole una función lambda
+   #+BEGIN_SRC elisp
+     ;; habilitamos el lexical binding
+     (setq lexical-binding t)
+
+     ;; definimos el closure
+     ;;
+     ;; si no habilitamos el lexical-binding entonces el símbolo `nombre' definido en `let', NO podrá ser usado en el cuerpo de la lambda..
+     ;; es decir cuando la lambda intente evaluar `nombre' dirá que NO existe
+     (setq persona (let ((nombre "pedrito"))
+                     (lambda () nombre)))
+
+     ;; invocamos el símbolo como una función porque éste retorna una función lambda
+     (funcall persona)
+   #+END_SRC
+*** Ejemplo 2 - Let, Lambda y Let + Lambda
+    #+BEGIN_SRC elisp
+      ;; declaramos una variable `persona' y le vinculamos un string "pedrito"
+      ;; sólo se podrá usar en el ámbito/scope de `let'
+      (let ((persona "pedrito")) persona)
+
+      ;; llamamos a una función lambda y le pasamos un parametro (un string) "pedrito"
+      ;; y de función lambda sabemos
+      ;; 1. recibe un parámetro `persona'
+      ;; 2. el cuerpo retorna el parámetro
+      ;;
+      ;; el resultado de invocar la lambda será un string, las variables de la lambda dejarán de existir una vez que finalice,
+      ;; al igual que la lambda ya que no está vinculada a un símbolo (Ej. se podría haber usado setq para luego invocarla)
+      ((lambda (persona) persona) "pedrito")
+
+      ;; definimos un nuevo contexto con `let'
+      ;; 1. declaramos el símbolo `persona' y le vinculamos el string "pedrito"
+      ;; éste símbolo se podrá usar sólo en el scope/ámbito de `let' (en su cuerpo unicamente)
+      ;; 2. en el cuerpo de `let'
+      ;; 2.1 definimos la función lambda que no recibe parámetros
+      ;; 2.2 en el cuerpo de la lambda retorna el símbolo `persona' (pero no es el del `let')
+      (let ((persona "pedrito"))
+        (lambda () persona))
+    #+END_SRC
+*** Ejemplo 3 - Crear un closure a medias
+    #+BEGIN_SRC elisp
+      ;; habilitamos el lexical binding
+      (setq lexical-binding t)
+
+      ;; éste será el closure que luego vincularemos a un símbolo declarado en `let'
+      (lambda (numero) (* 3 numero))
+
+      ;; éste closure sólo podrá invocar dentro del ámbito/scope de `let' (en el cuerpo de let),
+      ;; si queremos invocarlo fuera del ámbito de `let' debemos declarar un símbolo con `setq' y vincularle el retorno de `let' que es una función lambda
+      (let ((triple (lambda (numero)
+                      (* 3 numero))))
+        (funcall triple 2))
+    #+END_SRC
+*** Ejemplo 4 - Crear closure en detalle
+    #+BEGIN_SRC elisp
+      ;; habilitamos el lexical binding
+      (setq lexical-binding t)
+
+      ;; definimos un closure
+      ;;
+      ;; 1. definimos una variable `doble' y le vinculamos el contexto de `let'
+      ;; 2. el contexto de let
+      ;; 2.1 declaramos el símbolo `numero' y le vinculamos el valor `2' (sólo existe dentro del ámbito/scope de `let')
+      ;; 2.2 en el cuerpo de `let' definimos una función lambda
+      ;; 2.2.1 la función lambda recibe un parámetro
+      ;; 2.2.2 el cuerpo de la función lambda usa el valor del símbolo de `let' y lo multiplica por el parámetro que le pasamos a la lambda
+      ;;
+      ;; como el cuerpo de let retorna una lambda, ésta será el valor asignado al símbolo `doble' por tanto podemos invocarlo como una función
+      ;; y a éste pasarle el parámetro (que lo recibirá la función lambda)
+      (setq doble (let ((numero 2))
+                    (lambda (x) (* x numero))))
+
+      ;; invocamos el símbolo como una función y le pasamos un parámetro (que lo recibirá la lambda)
+      ;; si no habilitamos el lexical-binding entonces el símbolo `numero' definido en `let', NO podrá ser usado en el cuerpo de la lambda..
+      ;; es decir cuando la lambda intente evaluar `numero' dirá que NO existe
+      (funcall doble 4)
+    #+END_SRC
+** Ejemplos
+*** Ejemplo 1
+    #+BEGIN_SRC elisp
+      ;; habilitamos el Lexical binding
+      (setq lexical-binding t)
+
+      ;; imprimimos el nombre de buffer actual
+      (prin1-to-string (current-buffer))
+
+      ;; la siguiente función `foo' retorna un closure que retorna el primer argumento
+      ;; para que funcione como un `closure' habilitar el `lexical-binding'
+      (defun foo (x y)
+        (lambda () x))
+
+      (foo :bar :ignored)
+      ;; al ejecutar la anterior función el minibuffer imprimirá
+      ;; => (closure ((y . :ignored) (x . :bar) t) () x)
+    #+END_SRC
+*** Ejemplo 2
+    #+BEGIN_SRC elisp
+      ; habilitamos lexical binding
+      (setq lexical-binding t)
+
+      ; ó bien podemos deshabilitarlo para probar que ocurre sin él
+      (setq lexical-binding nil)
+
+      ; definimos una variable que le asignamos una función lambda por tanto podemos ejecutarla como una función
+      ; con `funcall'
+      ;
+      ; 1. con `setq' definimos una variable `test'
+      ; 2 con `let' definimos un nuevo contexto que reescribirá el valor de las variables si estas fueran externas
+      ; pero sólo dentro de del contexto definido/delimitado por `let'
+      ; 2.1 definimos una variable `foo' en el contexto de `let' y le asignamos el string "bar"
+      ; 2.2 en el cuerpo de `let' agregamos una función lambda
+      ; 2.2.1 la lambda no tiene parámetros, lo usual sería algo del tipo `let (param1 param2 ..) (cuerpo)'
+      ; 2.2.2 la lambda tiene en el cuerpo la variable definida por `let' por tanto es lo que retornará la lambda
+
+      ; definimos una variable `foo' y le asignamos el string "bar"
+      ; 1.2 ejecutamos una lambda sin parámetros que tiene la variable foo de cuerpo, es lo que devolverá
+      (setq test (let ((foo "bar"))
+                   (lambda () foo)))
+
+      ;; el resultado de evaluar lo anterior es el siguiente closure:
+      ;; (closure ((foo . "bar") t) nil foo)
+
+      ; si tenemos el lexical binding desactivado, entonces retornará el string "algo"
+      ; llamamos a la variable `test' con `funcall' como una función porque ésta retorna una lambda
+      (let ((foo "algo"))
+        (funcall test))
+    #+END_SRC
+*** Ejemplo 3
+    #+BEGIN_SRC elisp
+      ; habilitamos el lexical binding
+      (setq lexical-binding t)
+
+      ;; 1. declaramos dentro del contexto de `let' una variable `foo'
+      ;; 2. a la variable `foo' le asignamos una lambda
+      ;; 2.1 la lambda no recibe parámetros
+      ;; 2.2 el cuerpo de la lambda tiene un string (lo que retornará la lambda)
+      ;;
+      ;; 3. en el cuerpo de `let' definimos una función `bar'
+      ;; 3.1 la función `bar' invoca la variable `foo' como una función porque ésta retorna una lambda
+      (let ((foo (lambda () "soy un patito")))
+        (defun bar ()
+          (funcall foo)))
+
+      ;; si está habilitado el lexical binding devolverá el string "soy un patito" que retorna la lambda asignada a la variable `foo'
+      ;; si NO está habilitado, lanzará un error indicando que no está definido `foo' porque sólo vive en el contexto de `let'
+      (bar)
+    #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Closures.html][Closures (gnu.org)]]
+*** Referencias Extraoficiales
+    1. [[http://technical-dresese.blogspot.com/2011/04/brief-demonstration-of-emacs-new.html][Brief demonstration of emacs (technical-dresese.blogspot.com)]]
+* Binding
+** Conceptos
+  - Es la relación/enlace entre invocar una *función/método/procedimiento* y su *definición* (/el código que se ejecuta, la implementación/)
+  - Hay un *enlace/vínculo* entre la *llamada a una función* (el nombre/identificador) y la *definición de la función* (su implementación)
+
+  #+BEGIN_QUOTE
+  En *Binding Dinámico* los nombres de todas la variables y sus valores viven en una única tabla global
+
+  En *Binding Estático* cada *ámbito de scope* (función, sintáxis let, ..) crea una nueva tabla de nombre de variables y valores,
+  organizada jerárquicamente conocido como "ámbito" (las variables viven sólo en ese scope/ámbito)
+  #+END_QUOTE
+** Local binding
+   - El *local binding* por default en Emacs es el *Dynamic binding*
+   - Si un *símbolo* (variable) tiene un vínculo/enlace dinámico entonces tomará el valor del vínculo dinámico más reciente creado para ese símbolo 
+** Dynamic/Virtual Binding (Enlace Dinámico)
+   - En *tiempo de ejecución* se determina/resuelve la relación/enlace de ~(nombre de la funcion, definición de la funcion)~
+   - Cuando la determinación de que definición se aplica a un nombre se establece en *tiempo de ejecución*
+   - La *velocidad de ejecución es mas lenta* comparado con la *Vinculación Estática*
+     (/porque recopila la información necesaria para llamar a una función durante tiempo de ejecución/)
+
+   #+BEGIN_QUOTE
+   Un ejemplo de *Binding Dinámico*  puede ocurrir cuando se trabaja con métodos polimorfos en un lenguaje de programación orientada a objetos,
+   ya que la *definición completa del tipo del objeto* no se conoce hasta el *momento de la ejecución*
+   #+END_QUOTE
+** Static/Lexical Binding (Enlace Estático)
+   - En *tiempo de compilación* se determina/resuelve la relación/enlace de ~(nombre de la funcion, definición de la funcion)~
+   - Cuando la determinación de que *definición* (/la implementación, el código en si/) se aplica a un *nombre* se establece en *tiempo de compilación*
+   - La vinculación ocurre antes que se ejecute el programa (tiempo de compilación)
+   - *La velocidad de ejecución* es mayor comparado con la *Vinculación Dinámica*
+     (/porque toda la información se conoce antes de tiempo de ejecución/)
+
+   #+BEGIN_QUOTE
+   Un ejemplo de *Binding Estático* es una llamada a una función en C,
+   *la función referenciada por un identificador* NO puede cambiarse en *tiempo de ejecución*
+   #+END_QUOTE
+** Ejemplos
+*** TODO Ejemplo - Local binding con let y let*
+   #+BEGIN_SRC elisp
+     (setq y 2)
+
+     ;; si evaluamos sólo el simbolo y, devolverá el valor 2
+     y
+
+     ;; si evaluamos el símbolo usando `quoted' (ó su forma corta, la comilla simple)
+     ;; no será evaluado el símbolo y, retornando sólo y
+     'y
+
+     ;; al símbolo `y' le ata el valor 1 (sólo funciona dentro del cuerpo de let)
+     ;; al simbolo `z' le ata el valor de `y' (el valor de y debe estar previamente definido, si no lanzará error)
+     ;;
+     (let ((y 1) (z y))
+       (list y z))
+
+     ;; lanzará error, porque el símbolo `x' no fue definido,
+     ;; el primer símbolo que se define en `let' sólo funciona dentro del cuerpo de `let'
+     (let ((x 1) (z x))
+       (list z))
+
+     ;; con `let*' permite atar valores de los símbolos definidos en `let'
+     (let* ((y 1) (z y))
+       (list y z))
+
+     (let* ((y 3) (z y))
+       (list y z))
+
+     (let* ((x 1) (z x))
+       (list x z))
+   #+END_SRC
+*** Ejemplo de Binding con let
+   #+BEGIN_SRC elisp
+     ;; - con `let' podemos crear un `binding' (enlace, vínculo) entre un identificador y su valor
+     ;; - declaramos el identificador `nombre' y lo vincula con el valor (un string) "carlitos"
+     ;; - el vínculo/enlace creado por `let' vive sólo dentro de su scope/ámbito, fuera de éste deja de existir
+     (let ((nombre "carlitos"))
+       (print nombre))
+
+     ;; `let' es un "azúcar sintáctico", porque en realidad es una función `lambda'
+     ;;
+     ;; 1. declaramos dos variables `a' y `b' que viven dentro del ámbito de `let' y le asignamos como valor los enteros `1' y `2'
+     ;; 2. en el cuerpo de `let' sumamos los valores de las variables
+     (let ((a 1) (b 2)) (+ a b))
+
+     ;; ésta lambda hace lo mismo que el let anterior
+     ;;
+     ;; 1. recibe dos parámetros `a' y `b'
+     ;; 2. en el cuerpo suma sus valores
+     ;; 3. le pasamos el valor de los dos parámetros a la lambda `1' y `2'
+     ((lambda (a b) (+ a b)) 1 2)
+   #+END_SRC
+*** Ejemplo de Binding al llamar una función (defun)
+   #+BEGIN_SRC elisp
+     ;; - una llamada a una función crea un `binding' (enlace, vínculo) para sus parámetros, cuando estos son llamados
+     ;; - el vínculo/enlace creado por una llamada a una función, finaliza con su retorno
+     (defun saludar (nombre)
+       "esta función sólo saludará"
+       (let ((nombre "pepito")) (print nombre))
+       (print nombre))
+
+     (saludar "carlitos")
+   #+END_SRC
+*** Ejemplos conceptuales de Binding en Java
+    #+BEGIN_QUOTE
+    Binding Dinámico
+    - En java, al mandar un mensaje a dos objetos polimórficos distintos (/concepto de polimorfismo/)
+
+    Binding Estático
+    - En java, un objeto que recibe dos mensajes con el mismo nombre pero distintos parámetros (/concepto de Sobrecarga/)
+    #+END_QUOTE
+*** Ejemplo en (OOP) Paradigma Orientado a Objetos
+    #+BEGIN_QUOTE
+    Si tenemos la clases ~Contador~ y ~Programador~ que heredan los métodos de ~Empleado~ quien declara el método ~trabajar~
+
+    El ~Contador~ y el ~Programador~ entienden el mensaje ~trabajar~ pero cada uno tiene su propia implementación
+
+    Por ejemplo digamos que el jefe les llama la atención y los hace trabajar..
+    ~void llamarAtencion(Empleado e){ e.trabajar(); }~
+
+    A simple vista NO se puede determinar la clase de ~e~, puede ser un contador ó un programador,
+    podría ser ~Contador.trabajar~ ó ~Programador.trabajar~ 
+
+    Al utilizar *Dynamic Binding* el objeto ~e~ la decisión de *que método ejecutar*,
+    se retrasa hasta *tiempo de ejecución* en vez de decidir en *tiempo de compilación*
+    #+END_QUOTE
+** Referencias
+*** Referencias Oficiales
+    1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Variable-Scoping.html][Variable scoping (gnu.org)]]
+    2. [[https://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][Dynamic Binding Vs Lexical Binding (emacswiki.org)]]
+    3. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][Lexical binding (gnu.org)]]
+    4. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Anonymous-Functions.html][Anonymous functions (gnu.org)]]
+    https://www.gnu.org/software/emacs/manual/html_node/elisp/Local-Variables.html
+*** Referencias Extraoficiales
+    1. [[https://es.sawakinome.com/articles/programming/difference-between-static-binding-and-dynamic-binding.html][Difference between static binding and dynamic binding (sawakinome.com)]]
+    2. [[https://www.codingame.com/playgrounds/51214/manejo-dinamico-de-memoria-y-polimorfismo-practica-4/polimorfismo][Manejo dinámico de memoria y polimorfismo (codingame.com)]]
+    3. [[https://wiki.uqbar.org/wiki/articles/binding--polimorfismo-y-sobrecarga.html][Binding, Polimorfismo y sobrecarga (uqbar.org)]]
+*** Referencias Youtube
+    1. [[https://www.youtube.com/watch?v=y2eCjadS8x8][Enlace estático y dinámico (UPV)]]
+* Macro
+** Conceptos
+   - Una macro es "similar" a una función,
+   - La *llamada a una macro* es una *lista* donde _el primer elemento es el nombre de la macro_
+
+   #+BEGIN_QUOTE
+   La diferencia entre una *macro* y una *función* es
+   - Si X es una función => la llamada a X devolverá un *valor*
+   - Si X es una macro => la llamada a X devolverá una *expresión* (definida dentro de la macro)
+
+   Cuando se hace una llamada a una macro lo que ocurre es
+   1. se expande la macro (se reemplaza por la definición que ésta contiene)
+   2. el resultado es una expresión
+   3. se evalúa la expresión generada (Ej. una función)
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   Macros enable you to define new control constructs and other language features.
+   A macro is defined much like a function, but _instead of telling how to compute a value_,
+   _it tells how to compute another Lisp expression which will in turn compute the value_.
+   We call this expression the expansion of the macro. 
+   #+END_QUOTE
+** Ejemplos Basicos
+*** Ejemplo 1 - Macros usando list
+    #+BEGIN_SRC elisp
+      ;; definimos una macro que..
+      ;; - recibe un parámetro
+      ;; - y actúa igual que si hubieramos hecho (setq var nil)
+      (defmacro nil! (var)
+        (list 'setq var nil))
+
+      ;; le asignamos a la variable x el valor cero
+      (setq x 0)
+
+      ;; si evaluamos la variable x tendrá el valor cero
+      x
+
+      ;; evaluamos la macro nil! con la llamada a (nil! x)
+      ;; 1. elisp transformará la expresión (nil! x) de la forma (setq x nil)
+      ;; 2. elisp evaluará el resultado de la transformación anterior
+      ;; 3. la última expresión evaluada será (setq x nil)
+      ;; asignandole el valor nil a la variable x
+      ;;
+      ;; otra forma de verlo sería..
+      ;; 1. al llamar a la macro ésta se expande y se construye una expresión de la forma
+      ;; en la que está definida dentro de la macro
+      ;; 2. se evaluará la expresión que se creó con la macro
+      (nil! x)
+
+      ;; si volvemos a evaluar la variable x tendrá el valor nil
+      x
+    #+END_SRC
+*** Ejemplo 2 - Macro usando comilla invertida
+    #+BEGIN_SRC elisp
+      ;; esta es la misma macro que el ejemplo anterior pero..
+      ;; - usamos la comilla invertida en vez de list
+      ;; - en conjunto con la coma como prefijo en las expresiones que queremos para evaluar
+      ;; (se evaluará cuando se expanda la macro, quedando la expresión evaluada en la macro expandida)
+      ;;
+      (defmacro nil! (var)
+        `(setq ,var nil))
+
+      ;; le asignamos a la variable x el valor cero
+      (setq x 0)
+
+      ;; si evaluamos la variable x tendrá el valor cero
+      x
+
+      ;; llamamos a la macro, ésta se expandirá y se evaluará la función
+      ;; que estaá definida en el cuerpo de la macro
+      (nil! x)
+
+      ;; si volvemos a evaluar la variable x tendrá el valor nil
+      x
+    #+END_SRC
+*** Ejemplo 3 - Contador con list
+    #+BEGIN_SRC elisp
+      ;; 1. creamos la macro, debemos evaluarla
+      ;; (la macro queda más legible si usamos backquote en vez de list)
+      (defmacro incrementar-en-1 (x)
+        (list 'setq x (list '1+ x)))
+
+      ;; 2. definimos la variable x, asignandole el valor 0
+      (setq x 0)
+
+      ;; 3. llamamos a la macro
+      (incrementar-en-1 x)
+
+      ;; 4. si evaluamos la variable x, tendrá el valor incrementado
+      x
+    #+END_SRC
+*** Ejemplo 4 - Contador con backquote (comilla invertida)
+    #+BEGIN_SRC elisp
+      ;; 1. creamos la macro, debemos evaluarla
+      (defmacro incrementar-en-2 (x)
+        `(setq x (+ 2 ,x)))
+
+      ;; 2. definimos la variable x, asignandole el valor 0
+      (setq x 0)
+
+      ;; 3. llamamos a la macro
+      (incrementar-en-2 x)
+
+      ;; 4. si evaluamos la variable x, tendrá el valor incrementado
+      x
+    #+END_SRC
+** Ejemplos
+*** Ejemplo 1 - Crear un When con if, progn y &rest
+    - con ~progn~ ejecutamos una secuencia de expresiones (Ej. ~(progn 1 (+ 1 1) (list 1 2) (* 2 2) 3)~)
+    - con ~&rest nombre~ recibimos un cantidad indefinida de parámetros asignados a ~nombre~ en ese caso
+
+    #+BEGIN_SRC elisp
+      (defmacro mi-when (condicion &rest cuerpo)
+        `(if ,condicion
+             (progn ,@cuerpo)))
+
+
+      (setq x 9)
+
+      (mi-when (> x 3)
+               (message "el valor %d es mayor que 3" x))
+    #+END_SRC
+*** Ejemplo 2 - Macro con switch case llamada con mapcar y una lambda
+    - con ~mapcar~ aplicamos una función a cada elemento de una lista
+    - con ~signum~ nos dice si un número es positivo, negativo ó cero con los valores -1, 1 y 0
+    - con ~cl-case~ definimos el switch case de la forma ~(cl-case valor (posibleValor1 a) (posibleValor2 b))~ siendo ~a~ y ~b~ lo que devuelve
+    - con ~`~  (comilla invertida) creamos una lista de expresiones que no se evalúan
+    - con ~,~ (la coma) como prefijo especificamos que se evalúe una expresión que está dentro de la lista definida con ~`~ (comilla invertida)
+
+    #+BEGIN_QUOTE
+    Explicación de la llamada a nuestra macro ~signo-del-numero~ utilizada con ~mapcar~
+
+    parámetros que recibe ~mapcar~
+    1. el primero es una función lambda que recibe un parámetro y lo aplica en la macro ~signo-del-numero~
+    2. el segundo es una lista con tres números ~'(0 2.5 -8)~
+    
+   funcionamiento de ejecutar ~mapcar~
+   1. recorrerá cada elemento de la lista ~'(0 2.5 -8)~
+   2. le aplicará a cada elemento la función lambda que llama a la macro ~signo-del-numero~
+   3. con cada llamada a esa macro, se expandirá y ejecutará un switch case con el parámetro recibido
+
+   el resultado de ejecutar ~mapcar~ será una lista de variables donde..
+   - ~p~ representa un valor positivo
+   - ~c~ representa al cero
+   - ~n~ representa un valor negativo
+
+   Un ejemplo sencillo sería ~(mapcar (lambda (x) (+ 1 x)) '(1 2 3 4))~
+   1. le pasamos por parámetro la lista ~'(1 2 3 4)~
+   2. le sumará 1 a cada elemento y devolverá una nueva lista ~'(2 3 4 5)~
+    #+END_QUOTE
+
+    #+BEGIN_SRC elisp
+      (defmacro signo-del-numero(valor positivo cero negativo)
+        `(cl-case (signum ,valor)
+         (1 ,positivo)
+         (0 ,cero)
+         (-1 ,negativo)))
+
+      ;; cuando la macro se expandió reemplazó en su definición los parámetros que recibía
+      ;; por los que se le pasaron al llamar a la macro
+      ;; (Ej. valor se reemplazó por x, positivo se reemplazó por p, cero se reemplazó por c, negativo por n)
+      (mapcar (lambda (x) (signo-del-numero x 'p 'c 'n )) '(0 2.5 8))
+    #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://emacsdocs.org/docs/elisp/Expansion][Expansion of a Macro call (emacsdocs.org)]]
+    2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Macros.html][Macros (gnu.org)]]
+    3. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Functions.html ][Functions (gnu.org)]]
+*** Referencias Extraoficiales
+    1. [[https://mullikine.github.io/posts/macro-tutorial/][Didactic emacs-lisp macro example (mullikine.github.io)]]
+    2. [[https://medium.com/@CBowdon/getting-your-head-around-emacs-lisp-macros-c4bb3b1398e8][Getting your head around emacs lisp macros (medium.com/@CBowdon)]]
+    3. [[https://gist.github.com/caiorss/db85095ca8c3bfd46865][Elisp Macro examples (gist.github.com/caiorss)]] 
+    4. [[https://xdoc.mx/preview/notas-5e5d6cbfa119c ][Notas de Anónimo, orientado a Lisp (xdoc.mx)]]
+* Expandir Macros
+** Ejemplo 1 - Expansión simple
+  #+BEGIN_SRC elisp
+    (defmacro incrementar (var)
+      (list 'setq var (list '1+ var)))
+
+    ;; produce el mismo resultado que la macro incrementar
+    ;; pero es más fácil de leer por usar backquote (comillas invertidas) en vez de list
+    (defmacro incrementar-en-1 (var)
+      `(setq var (1+ ,var)))
+
+    ;; si expandimos la macro incrementar-en-1
+    ;;
+    ;; el resultado será: (setq var (1+ r))
+    (macroexpand '(incrementar-en-1 r))
+  #+END_SRC
+** Ejemplo 2 - Expandir macros anidadas
+  #+BEGIN_SRC elisp
+    (defmacro incrementar-en-1 (var)
+      `(setq var (1+ ,var)))
+
+    (defmacro incrementar-varios-en-1 (var1 var2)
+      `(progn (incrementar-en-1 ,var1) (incrementar-en-1 ,var2)))
+
+    (setf x 1 y 2)
+    (incrementar-varios-en-1 x y)
+
+    ;; si expandimos la macro incrementar-en-1
+    ;;
+    ;; el resultado será: (setq var (1+ r))
+    (macroexpand '(incrementar-en-1 r))
+
+    ;; si expandimos la macro incrementar-varios-en-1 sólo expandirá la macro pasada por parámetro a macroexpand
+    ;; si queremos que expanda el resto de las macros incluidas, debemos usar macroexpand-all
+    ;;
+    ;; el resultado será: (progn incrementar-en-1 (1+ r) incrementar-en-1 (1+ r))
+    (macroexpand '(incrementar-varios-en-1 r s))
+
+    (macroexpand-all '(incrementar-varios-en-1 r s))
+  #+END_SRC
+* TODO Otros Ejemplos
+  #+BEGIN_COMMENT
+  pendiente seguir analizando, antes creías que eran closures...
+  #+END_COMMENT
+
+** Ejemplo 1 - Contador
+   #+BEGIN_SRC elisp
+     ;; habilitamos lexical binding
+     (setq lexical-binding t)
+
+     (setq lexical-binding nil)
+
+     ;; definimos una función que incrementará el valor de `counter' cada vez que se ejecute la función `counting'
+     ;; al habilitar el "lexical binding" la función `counting'
+     ;;
+     ;; 1. declaramos la variable `counter' dentro del contexto de `let' y le asignamos el entero `0'
+     ;; 2. en el cuerpo de `let' definimos una función `counting' que incrementa en 1 el valor de la variable atada a `let'
+     ;;
+     ;; si no habilitamos el lexical binding, al invocar a `counting' lanzará un error porque no recibe como parámetro
+     ;; la variable `counter' de `let' que estaba inicializada en `0'
+     (let ((counter 0))
+       (defun counting ()
+         (setq counter (1+ counter))))
+
+     ;; cada llamada incrementará el valor (suponiendo que está habilitado el lexical binding)
+     (counting)
+
+     ;; si no habilitamos el "lexical binding", entonces la función `contar' no puede usar el contexto definido por `let'
+     ;; por tanto no recibiría el símbolo `contador' vinculado al valor `0'
+     (let ((contador 0))
+       (defun contar () contador))
+
+     (contar)
+   #+END_SRC
+** Ejemplo 2
+   #+BEGIN_SRC elisp
+     (setq lexical-binding t)
+
+     (defun bar (n)
+       (with-temp-buffer
+         (let ((standard-output (current-buffer)))
+           (loop for i from 0 to n do (princ i))
+           (let ((string (buffer-string)))
+             (lambda () string)))))
+
+     (bar 3)
+   #+END_SRC

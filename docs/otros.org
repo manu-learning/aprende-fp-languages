@@ -1,0 +1,35 @@
+* Otros
+  #+BEGIN_SRC elisp
+    ;; (point-min) devuelve la posición del cursor al principio de buffer
+    ;; (point) devuelve la posición actual del cursor
+    (message "Hay %d caracteres dentro de este buffer."
+             (- (point)
+                (save-excursion
+                  (goto-char (point-min)) (point))))
+  #+END_SRC
+
+  #+RESULTS:
+  : Hay 6289 caracteres dentro de este buffer.
+
+  #+BEGIN_SRC elisp
+    (defun hello (name)
+      (insert (format "Hello %s!\n" name)))
+
+    (hello "you")
+  #+END_SRC
+
+  #+BEGIN_SRC elisp
+    (setq invitados '("carlos" "pepe"))
+
+    (defun saludar(mi-nombre)
+      (let ((tu-nombre (read-from-minibuffer "Enter your name: ")))
+        (message "tu nombre es %s y yo soy %s" tu-nombre mi-nombre) )
+      )
+
+    ;;(saludar "perez")
+
+    (mapcar 'saludar invitados)
+  #+END_SRC
+
+  #+RESULTS:
+  | carlos | pepe |

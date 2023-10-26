@@ -1,0 +1,939 @@
+#+STARTUP: inlineimages
+* Listas
+** Conceptos
+   - Cada elemento de una lista se llama *cons cell*
+   - Las listas pueden tener la siguiente sintáxis
+     1. ~'(elemento1 elemento2 ...)~ (/usamos el apóstrofe como prefijo/)
+     2. ~(list elemento1 elemento2 ...)~ (/usamos la función list/)
+   - Para definir una variable y asignarle una lista usamos ~setq~
+   - Si usamos la función ~cons~ según el (CDR) se creará
+     - ó una lista
+     - ó una estructura de *par punteado* (dotted pair)
+
+  #+BEGIN_QUOTE
+  Si el CDR es una lista, entonces al usar ~cons~ el CAR (1º parámetro) se agrega como un elemento a CDR (2º parámetro)
+  Por ejemplo, los siguientes CDR serían listas:
+  - ~nil~ (/el elemento vacío, representa una lista vacía/)
+  - ~()~ (/lista vacía, sin elementos, sólo contiene a nil/)
+  - ~'(1 2)~ (/lista con dos elementos/)
+  - ~(list 1 2)~ (/lista con dos elementos/)
+  
+  Si CDR no es una lista, entonces al usar ~cons~ con el CAR (1º parámetro) y CDR (2º parámetro) se creará un *par punteado*
+  Por ejemplo los siguientes CDR no serían listas:
+  - ~1~ (/un tipo primitivo, constante entera/)
+  - ~"a"~ (/otro tipo primitivo, literal cadena/)
+  - ~'x~ (/una variable declarada con el identificador x/)
+  #+END_QUOTE
+** Ejemplos Básicos
+*** Ejemplo 1 - Diferentes maneras de crear listas
+    #+BEGIN_SRC elisp
+    (quote (1 2 3))
+
+    ;; la comilla simple es la forma corta de usar quote
+    '(1 2 3)
+
+    (list 1 2 3)
+    #+END_SRC
+*** Ejemplo 2 - Obtener un elemento específico de una lista
+    #+BEGIN_SRC elisp
+    ;; (nth n lista)
+    ;;
+    ;; nth: devuelve de una lista un elemento especificando su posición
+    (nth 0 '(1 2 3))
+    (nth 1 '(1 2 3))
+    #+END_SRC
+*** Ejemplo 3 - Obtener la posición de un elemento
+    #+BEGIN_SRC elisp
+    ;; (position n lista)
+    ;;
+    ;; position: devuelve la posición de un elemento perteneciente a una lista
+    (position 2 '(1 2 3 5))
+    (position 5 '(1 2 3 5))
+    #+END_SRC
+*** Ejemplo 4 - Filtrar elementos usando lambdas
+    #+BEGIN_SRC elisp
+    ;; (remove-if-not funcion-lambda lista)
+    ;;
+    ;; remove-if-not: filtra los elementos de la lista que cumplan con la condición de la función lambda
+    (remove-if-not (lambda (x) (> x 2))
+    '(1 2 3 4 5))
+    #+END_SRC
+** Ejemplos
+*** Ejemplo 1 - Operaciones básicas
+  #+BEGIN_SRC elisp
+    ;; Declaramos una variable `numeros' y le asignamos de valor la lista '(1 2 3 4)
+    (setq numeros '(1 2 3 4))
+
+    ;; evaluamos la variable
+    numeros
+
+    ;; `car' devuelve la cabeza de la lista (el primer elemento)
+    (car numeros)
+
+    ;; `cdr' devuelve la cola de la lista (los elementos siguientes al primero)
+    (cdr numeros)
+    
+    ;; obtenemos la cola de la lista, e invertimos el orden
+    (reverse (cdr numeros))
+  #+END_SRC
+*** Ejemplo 2 - Operaciones básicas
+  #+BEGIN_SRC elisp
+    ;; Lista con 3 elementos
+    ;; (al no estar asociada a una variable, no podemos reutilizarla)
+    '(1 2 3)
+
+    ;; Lista de 3 elementos con la notación dotted pair (a . b)
+    ;; (al no estar asociada a una variable, no podemos reutilizarla)
+    '(1 . (2 . (3 . nil)))
+
+    ;; - devuelve un par punteado (a . b)
+    ;; - usamos el apóstrofe en cada elemento para declarar una variable con ese identificador
+    ;; - como el segundo parámetro de `cons' no es una lista, se crea un par punteado (a . b)
+    ;; (al no estar asociada a una variable, no podemos reutilizarlo)
+    (cons 'a 'b)
+
+    ;; define una variable `lista' y le asigna la lista '(a b)
+    (setq lista '(a b))
+    lista
+
+    ;; devuelve una lista con tres elementos '(a b c),
+    ;; el último no se muestra porque  es una lista vacia '()
+    (cons 'a (cons 'b (cons 'c '())))
+
+    ;; - devuelve una lista con 4 elementos (a b c d)
+    ;; - con `const' agregamos la variable `a' declarada al principio de la lista '(b c d)
+    (cons 'a '(b c d))
+
+    ;; con `cdr' obtenemos el valor del par punteado (a . b)
+    ;; es decir del par clave-valor agarrará el valor que es `b'
+    (cdr '(a . b))
+
+    ;; - con `car' obtenemos la clave del par punteado (a . b)
+    ;; es decir del par clave-valor agarrará la clave que es `a'
+    (car '(a . b))
+
+    ;; - definimos una variable `lista' y le asignamos un par punteado (a . b)
+    ;; - como el segundo parámetro de `cons' no es una lista, se crea un par punteado (a . b)
+    (setq lista (cons 'a 'b))
+
+    lista
+  #+END_SRC
+*** Ejemplo 3 - Permutar elementos entre listas
+  #+BEGIN_SRC elisp
+    ;; Definimos una función que cambia el primer elemento de una lista2, por el primero de lista1
+    ;;
+    ;; 1. `car' devuelve la cabeza de lista1 (el primer elemento)
+    ;; 2. `cdr' devuelve la cola de lista2 (los elementos siguientes al primero)
+    ;; 3. `cons' inserta el elemento que devuelve `car lista1' en la lista que devuelve `cdr lista2'
+    (defun permutainicio (lista1 lista2)
+      (cons (car lista1) (cdr lista2))
+      )
+
+    ;; Invocamos la función
+    (permutainicio '(1 2 3) '(a b c))
+  #+END_SRC
+*** Ejemplo 4 - Recortar los extremos de una lista
+  #+BEGIN_SRC elisp
+    ;; Definimos una función que elimina el primer elemento y el último elemento
+    ;;
+    ;; 1. Devuelve la cola de la lista (desaparece el primero)
+    ;; 2. Invierte el orden de los elementos de la lista (en una nueva lista)
+    ;; 3. Devuelve la cola de la nueva lista (desaparece el primero, que al principio era el último)
+    ;; 4. Invierte el orden, quedando en el mismo orden que al principio
+    (defun recortalista (lista)
+      (reverse (cdr (reverse (cdr lista))))
+      )
+
+    ;; Invocamos la función
+    (recortalista numeros)
+  #+END_SRC
+*** Ejemplo 5 - Reconocer si una cadena es palíndrome
+  #+BEGIN_SRC elisp
+    ;; Definimos la función
+    (defun es-palindrome (lista)
+      (equal lista (reverse lista))
+      )
+
+    ;; Invocamos la función
+    (es-palindrome "hooh")
+  #+END_SRC
+* (plist) Listas de Propiedades
+** Conceptos
+  - Son estructuras de datos similar a los registros/campos en otros lenguajes
+  - Son similares a las (alist) *Listas Asociativas* porque asocian clave-valor pero sin *cons cells*
+  - La funciones ~plist-put~ y ~plist-get~ comparan las claves de las propiedades usando la función ~eq~
+  - Las funciones básicas para obtener/modificar los elementos en una (plist) son
+    1) Con ~plist-get~ obtenemos una propiedad de la lista de propiedades, uno en particular
+    2) Con ~plist-put~ busca una propiedad por su nombre/clave
+       - si la encuentra modfica el valor
+       - si no la encuentra, agrega su clave y valor
+
+  #+BEGIN_QUOTE
+  Una (plist) *Lista de Propiedades* puede tener la siguiente sintáxis:
+  1) ~(clave1 valor1 clave2 valor2 ... clave-n valor-n)~
+  2) ~(:clave1 valor1 :clave2 valor2 ... :clave-n valor-n)~
+  
+  Una (alist) *Lista Asociativa* puede tener la siguiente sintáxis:
+  1) ~((clave1 . valor1) (clave2 . valor2) ... (clave-n . valor-n))~
+  2) ~((clave1 valor1 valor2 valor3) (clave2 valor1 valor2) ... (clave-n valor-n))~
+  
+  Para más información evaluar la siguiente s-exp:
+  ~(info "(elisp) Symbol Properties")~
+  #+END_QUOTE
+  
+  #+BEGIN_QUOTE
+  Extracto interesante de (gnu.org):
+  A symbol whose name starts with a colon (‘:’) is called a keyword symbol.
+  These symbols automatically act as constants, and are normally used only
+  by comparing an unknown symbol with a few specific alternatives
+  
+  These symbols cannot be rebound, nor can their values be changed.
+  Any attempt to set or bind nil or t signals a setting-constant error.
+  
+  These constants are fundamentally different from the constants defined using the defconst special form 
+  A defconst form serves to inform human readers that you do not intend to change the value of a variable,
+  but Emacs does not raise an error if you actually change it.
+  #+END_QUOTE
+  - Al invocar la función  ;; cada elemento de la lista es del tipo :clave1 valor :clave2 valor
+** Ejemplos
+*** Ejemplo 1 - Diferentes maneras de definir Listas de propiedades
+   #+BEGIN_SRC elisp
+     ;; Definimos una variable `persona'
+     ;; y le asignamos una Lista de propiedades
+     ;; (usamos el apóstrofe para crear la lista, es la forma corta a quote)
+     (setq persona '(:nombre "carlos" :apellido "gimenez"))
+
+     ;; obtenemos el valor del atributo nombre
+     (plist-get persona :nombre)
+
+     ;; alternativa, usando la función `list'
+     (setq persona (list :nombre "carlos" :apellido "gimenez"))
+
+     ;; Otra alternativa, ya que una plist en realidad tiene
+     ;; la forma de (clave1 valor1 clave2 valor2 .. clave-n valor-n)
+     ;;
+     ;; aunque considero que las primeras se entienden mejor
+     (setq persona '(nombre "carlos" apellido "gimenez"))
+   #+END_SRC
+*** Ejemplo 2 - Definir una única vez una lista de propiedades con defvar
+    #+BEGIN_SRC elisp
+      ;; con defvar definimos una variable una única vez
+      ;; si ya existe una variable con esta lista no se sobreescribe
+      (defvar mi-lista-config (list
+                            :buffer (current-buffer)
+                            :linea 50
+                            :posicion 50))
+
+      ;; si evaluamos la variable debería devolver una lista de propiedades
+      mi-lista-config
+
+      ;; (plist-get plist propiedad)
+      ;;
+      ;; plist-get: obtenemos los valores de cada propiedad
+      (plist-get mi-lista-config :linea)
+
+      (plist-get mi-lista-config :posicion)
+
+      (plist-get mi-lista-config :buffer)
+
+      ;; si hicieramos esto, no podemos redefinir la lista con defvar
+      ;; deberíamos usar setq
+      (setq lista-config nil)
+
+    #+END_SRC
+*** Ejemplo 3 - Crear/Modificar una Lista de propiedades
+   #+BEGIN_SRC elisp
+     ;; - definimos una variable y le asignamos una Lista de propiedades
+     ;; con 3 elementos tipo clave-valor
+     ;; - con `setq' es similar a usar `set' pero nos evitamos agregar
+     ;; el apóstrofe al nombre de la variable
+     (setq personajes '(hulk "bruce banner" deadpool "wade wislon " wolverine "james howlett"))
+
+     ;; Probamos definir variables con `setq' y `set' para que se vea la diferencia
+     (setq digimon "agumon")
+     (set 'pokemon "pikachu")
+
+     ;; Si evaluamos las variables, el resultado es el mismo
+     digimon
+     pokemon
+
+     ;; agregamos un elemento
+     (plist-put personajes 'iron-man "tony star")
+
+     ;; modificamos un elemento
+     (plist-put personajes 'iron-man "tony stark")
+
+     ;; - evaluamos la variable
+     ;; - no usamos paréntesis porque sólo sirven para las funciones
+     personajes
+   #+END_SRC
+*** Ejemplo 4 - Obtener el valor de un elemento por su clave/nombre
+   #+BEGIN_SRC elisp
+     ;; - en ambos ejemplos estamos creando una lista de propiedades
+     ;; y pasandola por parámetro, su ciclo de vida termina cuando
+     ;; termina de evaluarse cada función
+     ;; - quizás lo mejor sería que estuviera definida esa lista
+     ;; en otra linea y evitamos repetir lógica además de poder reutilizarla
+
+     ;; obtenemos el valor de la clave `nombre'
+     (plist-get '(:nombre "carlitos" :edad 5) 'nombre)
+
+     ;; obtenemos el valor de la clave `edad'
+     (plist-get '(nombre "carlitos" edad 5) 'edad)
+   #+END_SRC
+*** Ejemplo 5 - Crear listas de propiedades + Agregar/Modificar elementos (más detallado)
+   #+BEGIN_SRC elisp
+     ;; - definimos la lista de propiedades, de tres maneras
+     ;; 1º manera: podemos usar la función `list'
+     ;; 2º manera: podemos usar con el apóstrofe similar como con las variables
+     ;; pero seguido de los paréntesis
+     ;; 3º manera: aplica si usamos (list e1 e2 ..) ó '(e1 e2 ..)
+     ;; sólo cambiamos el símbolo de cada clave para identificarlas
+     (setq estudiante (list 'nombre "fede" 'edad 17))
+     (setq estudiante '('nombre "fede" 'edad 17))
+     (setq estudiante '(:nombre "fede" :edad 17)) ;; esta suele ser la más común
+
+     ;; con plist-put busca una propiedad por su clave
+     ;; - si la encuentra modfica el valor
+     ;; - si no la encuentra, agrega su clave y valor
+
+     estudiante ; evaluemos la variable para ver su valor
+
+     ;; buscamos la propiedad por su clave `edad', y modificamos su valor a `18'
+     (plist-put estudiante 'edad 18)
+     ;(setq estudiante(plist-put estudiante 'edad 18))
+
+     estudiante ; evaluemos la variable para ver su valor
+
+     ;; Agregamos un elemento
+     ;; - su nombre/clave es `amigos'
+     ;; - su valor es una lista que contiene dos elementos
+     (plist-put estudiante 'amigos '("carlitos" "pedrito"))
+     ;(setq estudiante (plist-put estudiante 'amigos '("carlitos" "pedrito")))
+
+     estudiante ; evaluemos la variable para ver su valor
+   #+END_SRC
+*** Ejemplo 6 - Usando let para usar variables locales
+   #+BEGIN_SRC elisp
+     ;; definimos una variable
+     ;; y le asignamos una plist con dos elementos
+     (setq datos
+           '(:clave1 4 :clave2 "hola"))
+
+     (plist-get datos :clave1)
+
+     ;; 1. definimos dos variables locales "en el scope de let"
+     ;; 2. a la primera variable le asignamos el valor de un elemento de una plist llamada `datos',
+     ;; aquel elemento que tenga como clave el identificador `clave1'
+     ;; 3. a la segunda vaiable le asignamos la constante entera `10'
+     (let ((dato1 (plist-get datos :clave1))
+           (dato2 10))
+       (message "el valor del primer parámetro es %s y del segundo %d" dato1 dato2))
+
+     ;; similar que el anterior `let', definimos dos variables locales "en el scope de let"
+     ;; pero al 2º parámetro también le asignamos otro elemento de la plist
+     ;; y que tenga como clave el identificador `clave2'
+     (let ((dato1 (plist-get datos :clave1))
+           (dato2 (plist-get datos :clave2)))
+       (message "el valor del primer parámetro es %s y del segundo %s" dato1 dato2))
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Constant-Variables.html][Constant Variables (gnu.org)]]
+   2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Symbol-Type.html][Symbol type (gnu.org)]]
+   3. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Plist-Access.html][Plist Access (gnu.org)]]
+   4. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Plists-and-Alists.html][Property List and Association List (gnu.org)]]
+   5. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html][Association List (gnu.org)]]
+* Par punteado (dotted pair notation)
+** Conceptos
+  - Al aplicar la función ~cons~ en dos *átomos* se obtiene un *par punteado*
+  - Un *par punteado* tiene la sig. sintáxis ~(a . b)~
+  - Cada *par punteado* tiene una
+    1. Una *clave* (/también llamado CAR/)
+    2. Un *valor* asociado (/también llamado CDR/)
+  - Las funciones básicas para obtener los elementos de un *par punteado* son
+    1. La función ~car~ obtiene el primer elemento (CAR)
+    2. La función ~cdr~ obtiene el segundo elemento (CDR)
+
+  #+BEGIN_QUOTE
+  Si hacemos ~(cons 'x 'y)~ se crea el *par punteado*  ~(x . y)~
+  los parámetros que le pasamos tienen un apóstrofe como prefijo porque son simbolos/variables que declaramos,
+  también podría haber sido sólo constantes numéricas ~(cons 1 2)~ que crea ~(1 . 2)~
+
+  Si hacemos ~'x~ estamos declarando una variable ~x~
+  Si hacemos ~(setq x 1)~ estamos declarando la variable x, y le asignamos el valor 1 (esta manera es la más utilizada)
+  Si hacemos ~(set 'x 1)~ estamos declarando la variable x, y le asignamos el valor 1
+  #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     ;; - Si usamos `cons' y el segundo parámetro NO es una lista,
+     ;; entonces se devuelve un "par punteado" ó "celdas cons" con dos punteros
+     ;;
+     ;; devuelve el par punteado ("a" . 5)
+     (cons "a" 5)
+
+     ;; devuelve el par punteado (1 . 2)
+     (cons 1 2)
+
+     ;; devuelve el par punteado (a . 5)
+     ;; (en el primer parámetro habíamos declarado una variable porque empieza con apóstrofe)
+     (cons 'a 5)
+
+     ;; `car' devuelve el 1º puntero del par punteado
+     (car '(x . 5))
+
+     ;; `cdr' devuelve el 2º puntero del par punteado
+     (cdr '(x . 5))
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   4. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Dotted-Pair-Notation.html][Dotted Pair Notation (gnu.org)]] <- retomar
+   5. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Box-Diagrams.html][Box Diagrams (gnu.org)]] <- retomar
+* Listas Enlazadas y Celdas Cons (Cons cell)
+** Conceptos
+  - Una lista enlazada está formada por uno ó varios *cons cells* que representan los *nodos* (/punteros/)
+  - Cada *nodo* (cons cell, celda cons) *se compone por dos punteros* (CAR y CDR)
+    1) Se utiliza la función ~car~ para obtener el primer puntero
+    2) Se utiliza la función ~cdr~ para obtener el segundo puntero
+  - Si se utilizan las *celdas cons* (los punteros) para armar una *lista enlazada*
+    1) Se utiliza la función ~car~ para obtener la cabeza de la lista (head, el primer elemento)
+    2) Se utiliza la función ~cdr~ para obtener la cola de la lista (tail, el resto de los elementos)
+
+  #+BEGIN_QUOTE
+  Si creamos una *lista enlazada* entonces el segundo puntero (CDR) de cada nodo (cons cell) apuntará a otro nodo (cons cell), y asi..
+  hasta que el segundo puntero (CDR) de último nodo (cons cell) debe apuntar a ~nil~ que representa el fin de la lista enlazada
+  #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     ;; - devuelve un "par punteado" (x . y)
+     ;; - `cons' agrega el primer parámetro al segundo parámetro
+     ;;
+     ;; Si lo vemos como una lista enlazada
+     ;; - x: es el primer elemento, ó la cabeza (head) de la lista
+     ;; - y: es el segundo elemento ó la cola (tail) de la lista ó también el resto de los elementos
+     ;;
+     ;; Si lo vemos como un "par punteado"
+     ;; - x: es la clave
+     ;; - y: es el valor asociado
+     ;;
+     ;; Si lo vemos como una "celda cons"
+     ;; - x: es el primer puntero
+     ;; - y: es el segundo puntero
+     (cons 'x 'y)
+
+     ;; obtenemos el primer elemento ó bien la cabeza de la lista
+     (car (cons 'x 'y))
+
+     ;; obtenemos el segundo elemento ó bien la cola de la lista
+     (cdr (cons 'x 'y))
+
+     ;; - combina las funciones cdr y car así (car (cdr '(1 2 3)))
+     ;; - obtiene el primer elemento de la cola de la lista
+     (cadr '(1 2 3))
+   #+END_SRC
+*** Ejemplo 2
+   #+BEGIN_SRC elisp
+     ;; las siguientes cuatro lineas representan a una lista vacía
+     ()
+     nil
+     '()
+     (list)
+
+     ;; - las siguientes cuatro lineas crean una lista enlazada con sólo un elemento
+     ;; - la cabeza de la lista contiene a `b'
+     ;; - la cola de la lista contiene a `nil' que representa el fin de la lista
+     (cons 'b nil)
+     (cons 'b ())
+     (cons 'b '())
+     (cons 'b (list))
+
+     ;; ó bien podríamos hacerlo más sencillo con
+     (list 'b)
+     '(b)
+
+     ;; declaramos una variable `x' y le asignamos la lista '(b) que tiene sólo un elemento
+     (setq x (list 'b))
+
+     ;; Crea una lista enlazada donde
+     ;; - El primer puntero (CAR) del primer nodo apunta a `a'
+     ;; - El segundo puntero (CDR) del primer nodo apunta al "par punteado" (b . c)
+     (cons 'a '(b . c))
+
+     ;; esto es lo mismo
+     '(a b . c)
+   #+END_SRC
+*** Ejemplo 3
+   #+BEGIN_SRC elisp
+     ;; - Si usamos `cons' y el segundo parámetro NO es una lista,
+     ;; entonces se devuelve un "par punteado" ó "celdas cons" con dos punteros
+     ;;
+     ;; devuelve el par punteado ("a" . 5)
+     (cons "a" 5)
+
+     ;; devuelve el par punteado (1 . 2)
+     (cons 1 2)
+
+     ;; devuelve el par punteado (a . 5)
+     ;; (en el primer parámetro habíamos declarado una variable porque empieza con apóstrofe)
+     (cons 'a 5)
+
+     ;; `car' devuelve el 1º puntero del par punteado
+     (car '(x . 5))
+
+     ;; `cdr' devuelve el 2º puntero del par punteado
+     (cdr '(x . 5))
+
+     ;; --------------------------------------------------------------------------------
+
+     ;; - Si usamos `cons' y el segundo parámetro es una lista,
+     ;; el resultado será una lista, insertando el primer parámetro como primer elemento en esa lista
+     ;;
+     ;; devuelve la lista (1 2 3 4)
+     (cons 1 '(2 3 4))
+
+     ;; devuelve la lista (1 2 3 4)
+     (cons 1 (list 2 3 4))
+
+     ;; --------------------------------------------------------------------------------
+
+     ;; creamos la lista enlazada '(1 2)
+     ;; 1 -> 2 -> NULL
+     (cons 1 (cons 2 nil))
+
+     ;; creamos la lista enlazada '(1 2 3)
+     ;; 1 -> 2 -> 3 -> NULL
+     (cons 1 (cons 2 (cons 3 nil)))
+
+     ;; esto NO crea la lista '(1 2 3) porque le falta el nil
+     ;; 1 -> 2 . 3
+     (cons 1 (cons 2 3))
+
+     ;; - devuelve una lista enlazada (list 1 2 3 4)
+     ;; - Se enlazan los pares punteados, usando el segundo puntero
+     ;; - El último puntero contiene a null, como en cualquier lista enlazada
+     (cons 1 (cons 2 (cons 3 nil)))
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Cons-Cells.html][Cons Cells (gnu.org)]]
+   2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Cons-Cell-Type.html][Cons Cell and List types (gnu.org)]]
+   3. [[https://en.wikipedia.org/wiki/Cons][Cons (wikipedia.org)]]
+*** Referencias Extraoficiales
+   1. [[https://cs.gmu.edu/~sean/lisp/cons/][About Cons Cell (cs.gmu.edu)]]
+   2. [[https://learntutorials.net/es/common-lisp/topic/2622/contras-celdas-y-listas][Contras celdas y listas (learntutorials.net)]]
+* (alist) Listas Asociativas y Pares punteados
+** Conceptos
+  - Una (alist) *lista asociativa* es similar a una (plist) *lista de propiedades* porque asocian un par clave-valor
+  - Una *Lista asociativa* por lo general es una lista de *pares punteados* porque cada elemento está en notación *dotted pair*
+
+  #+BEGIN_QUOTE
+  La sintáxis de una *alist* puede variar según si la clave tiene asociada uno ó varios elementos
+  
+  Si cada clave tiene asociada sólo a un valor, entonces usamos la notación *dotted pair*
+  Por ejemplo ~'((clave1 . valor1) (clave2 . valor2) ... (clave-n . valor-n))~
+  
+  Si cada clave tiene asociado más de un valor
+  Por ejemplo ~'((clave1 valor1 valor2 valor) (clave2 valor1 valor2) ...)~
+  #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Crear listas asociativas
+   #+BEGIN_SRC elisp
+     ;; definimos una variable/símbolo global llamada `datos'
+     ;; y le asignamos una (alist) con dos elementos/asociaciones
+     (setq datos '((clave1 . 4) (clave2 . "hola")))
+
+     ;; usamos la función `list' en vez del apóstrofe para crear la lista
+     (setq datos (list (clave1 . 4) (clave2 . "hola")))
+
+     ;; lo mismo que antes pero una alist de tres elementos,
+     ;; y cambiamos el formato a uno más entendibe
+     (setq datos
+           '((clave1 . 4)
+             (clave2 . "hola")
+             (clave3 . "chau")))
+
+     ;; 1. con `assoc' obtenemos el elemento/asociación que tenga como clave `clave2'
+     ;; 2. con `cdr' obtenemos el valor asociado
+     (cdr (assoc 'clave2 datos))
+   #+END_SRC
+*** Ejemplo 2 - Crear lista asociativa y obtener el valor asociado a un elemento
+   #+BEGIN_SRC elisp
+     ;; definimos una variable/simbolo global llamada `datos'
+     ;; y le asignamos una (alist) Lista Asociativa con dos elementos/asociaciones
+     (setq datos '((edad . 19) (nombre. "carlitos")))
+
+     ;; 1. con `assoc' obtenemos el elemento/asociación de la alist `datos'
+     ;; que tenga como clave el símbolo `edad'
+     ;; 2. con `cdr' obtenemos el valor asociado al "par punteado" que devolverá `assoc'
+     (cdr (assoc 'edad datos))
+
+     ;; idem, pero busca por la clave que tenga el símbolo `nombre'
+     (cdr (assoc 'nombre datos))
+   #+END_SRC
+*** Ejemplo 3 - Lista asociativa donde la clave es una variable/símbolo
+   #+BEGIN_SRC elisp
+     ;; definimos una variable/símbolo global `arbolitos'
+     ;; y le asignamos una alist con 3 elementos (pares punteados)
+     (setq arbolitos '((naranjo . naranjas) (manzano . manzanas) (olivo . aceitunas)))
+
+     ;; - con `assoc' obtenemos la primera asociación de la lista que coincida con la clave
+     ;; (si no lo encuentra, devuelve nil)
+     ;; - 1º parámetro es la clave del elemento (asociación) que queremos buscar
+     ;; - 2º parámetro es la (alist) lista de asociaciones
+     (assoc 'olivo arbolitos)
+     (assoc 'manzano arbolitos)
+     (assoc 'pino arbolitos)
+
+     ;; 1. obtenemos el elemento/asociación que tenga como clave la variable/símbolo `olivo'
+     ;; 2. obtenemos el valor (CDR) del elemento/asociación
+     (cdr (assoc 'olivo arbolitos))
+   #+END_SRC
+*** Ejemplo 4 - Lista asociativa donde la clave NO es una variable/símbolo
+   #+BEGIN_SRC elisp
+     ;; - Definimos una variable/símbolo global `frutas'
+     ;; - Le asignamos una (alist) donde la clave (CAR) de cada elemento,
+     ;; es una constante entera en vez de una variable/símbolo
+     (setq frutas
+           '((2 "naranja")
+             (3 "manzana")
+             (7 "banana")))
+     (assoc 2 frutas)
+     (cdr (assoc 2 frutas))
+
+     ;; como los elementos de la (alist) no tienen la notación "dotted pair"
+     ;; podemos asociarle más de un valor a cada clave
+     (setq frutas
+           '((2 "naranja" "mandarina" "pomelo")
+             (3 "manzana" "pera")
+             (7 "banana")))
+     (assoc 2 frutas)
+     (cdr (assoc 2 frutas))
+   #+END_SRC
+*** Ejemplo 5 - Lista asociativa donde una clave tiene asociada más de un valor
+   #+BEGIN_SRC elisp
+     ;; - (alist) Lista Asociativa, donde la clave es una variable/símbolo
+     ;; - los elementos son "pares punteados" porque asociamos un par clave-valor con la notación "dotted pair"
+     '((perro . ladra) (gato . maulla) (leon . gruñe))
+
+     ;; - otro tipo de (alist) Lista Asociativa, donde la clave también es una variable/símbolo
+     ;; - los elementos  de la (alist) NO usan la notación "dotted pair"
+     ;; - podemos asociar a cada clave (conocida por CAR) más de un valor (forman parte del CDR)
+     '((perro ladra) (gato maulla) (leon gruñe))
+
+     ;; Definimos una variable/símbolo global y le asignamos la (alist)
+     (setq animales '(
+                      (perro ladra corre)
+                      (gato maulla ronronea raguña)
+                      (leon gruñe)))
+
+     ;; obtenemos el (CDR) los valores asociados
+     ;; a la (CAR) clave llamada "perro" de la lista "animales"
+     (cdr (assoc 'perro animales))
+   #+END_SRC
+*** Ejemplo 6 - Usando let para variables locales en una (alist) sin notación dotted pair
+   #+BEGIN_SRC elisp
+     ;; Usamos una (alist) donde los elementos no tienen la notación "dotted pair"
+     ;; porque cada clave tiene asociado más de un valor
+     ;;
+     ;; (let ((variable1 valor1) (variable2 valor2)) (cuerpo))
+     (let ((frutas '((manzana roja verde) (zanahoria naranja) (papa rosa blanca negra))))
+       (message "los colores de la manzana puede ser %s"
+                (cdr (assoc 'manzana frutas))))
+   #+END_SRC
+*** Ejemplo 7 - Usando let para variables locales en una (alist) con pares punteados
+   #+BEGIN_SRC elisp
+     ;; un let básico para no marearse con el ejemplo siguiente
+     (let ((x 1)) (message "%d" x))
+
+     ;; Usamos una (alist) donde los elementos son "pares punteados" (usan la notación "dotted pair")
+     ;; porque las claves tienen sólo un valor asociado
+
+     ;; - definimos dos variables locales (en el ámbito de let)
+     ;; - la 1º variable/símbolo se llama `dato1-personal'
+     ;; y le asignamos como valor una (alist) con dos elementos
+     ;; - la 2º variable/símbolo se llama `dato2-familiar'
+     ;; y le asignamos un literal cadena (string)
+     (let ((dato1-personal
+            '((edad . 4) (nombre . "carlos")))
+           (dato2-familiar "samuel"))
+       (cdr (assoc 'nombre dato1-personal)))
+   #+END_SRC
+*** Ejemplo 8
+   #+BEGIN_SRC elisp
+     ;; - la variable/símbolo `a' está asociado con la constante entera 1
+     ;; - el literal cadena "b" está asociado con la lista (2 3)
+     '((a . 1) ("b" 2 3))
+
+     (setq lista-rarita '((a . 1) ("b" 2 3)))
+     (cdr (assoc "b" lista-rarita))
+   #+END_SRC
+*** Ejemplo 9 - Definir una única vez una lista asociativa con defvar
+    #+BEGIN_SRC elisp
+      ;; definimos una variable con una lista asociativa
+      ;; donde cada elemento es de la forma (clave . valor) conocidos como cons cells
+      ;;
+      ;; otra definición de una "cons cell" es que está formada una lista con dos punteros
+      ;; la "clave" sería la cabeza de la lista, el "valor" sería la cola de la lista
+      (defvar lenguajes-favoritos
+        '(
+          ("haskell" . ((:descripcion . "lenguaje de programación funcional")
+                           (:comando . "haskell")))
+          ("prolog" . ((:descripcion . "lenguaje de programación lógico")
+                     (:comando . "prolog")))
+          )
+        )
+
+      ;; si evaluamos la variable imprimirá la alist en el minibuffer
+      lenguajes-favoritos
+
+      ;; obtenemos todos asociaciones (clave . valor) del elemento que tiene como clave la cadena "haskell"
+      ;; de la lista asociativa
+      (assoc "haskell" lenguajes-favoritos)
+
+      ;; obtenemos el valor :comando de una cons cell (clave . valor) que tenga como clave la cadena "haskell"
+      ;; de la lista asociativa
+      (assoc :comando (assoc "haskell" lenguajes-favoritos))
+
+      ;; obtenemos el valor de la asociación (clave . valor) del elemento (cons cell) anterior
+      (cdr (assoc :comando (assoc "haskell" lenguajes-favoritos)))
+
+      ;; Nota: recordar que cada elemento de una lista asociativa es una celda cons (ó bien cons cells)
+      ;; porque cada elemento '(clave . valor) es lo mismo que (cons 'x 'y)
+      (cons 'x 'y)
+
+      '(a . b)
+
+      ;; de cada elemento (clave . valor) de la lista asociativa, obtenemos cada clave
+      (mapcar 'car lenguajes-favoritos)
+
+      ;; de cada elemento (clave . valor) de la lista asociativa, obtenemos cada valor
+      (mapcar 'cdr lenguajes-favoritos)
+    #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html][Association Lists (gnu.org)]]
+   2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-List-Type.html][Association List type (gnu.org)]]
+   3. [[https://www.emacswiki.org/emacs/AssociationList][Association List (emacswiki.org)]]
+*** Referencias Extraoficiales
+   1. [[http://xahlee.info/emacs/emacs/elisp_association_list.html][Elisp Association List (xahlee.info)]]
+   2. [[https://kitchingroup.cheme.cmu.edu/blog/2017/04/16/A-callable-plist-data-structure-for-Emacs/][A callable plist data structure (kitchingroup.cheme.cmu.edu)]]
+   3. [[https://sobrelisp.blogspot.com/2013/05/mas-tipos-de-datos-lisp.html][Lisp Tipos de datos (sobrelisp.blogspot.com)]]
+* Funciones para Listas Asociativas
+** Lista asociativa para los ejemplos
+   #+BEGIN_SRC elisp
+     ;; definimos una variable con una lista asociativa
+     ;; donde cada elemento es de la forma (clave . valor) conocidos como cons cells
+     ;;
+     ;; otra definición de una "cons cell" es que está formada una lista con dos punteros
+     ;; la "clave" sería la cabeza de la lista, el "valor" sería la cola de la lista
+     (defvar lenguajes-favoritos
+       '(
+         ("haskell" . ((:descripcion . "lenguaje de programación funcional")
+                       (:comando . "haskell")))
+         ("prolog" . ((:descripcion . "lenguaje de programación lógico")
+                      (:comando . "prolog")))
+         )
+       )
+   #+END_SRC
+** Ejemplo 1 - Obtener el Valor de un elemento/asociación
+   #+BEGIN_SRC elisp
+     ;; si evaluamos esta variable, debería devolver una lista asociativa
+     ;; que debimos evaluar previo a probar este ejemplo
+     lenguajes-favoritos
+
+     ;; 1. definimos la función
+     ;; 1.1 con assoc obtenemos un elemento (clave . valor) de la lista que
+     ;; tenga como clave la pasada por parámetro a la función
+     ;; 1.2 obtenemos del elemento anterior el valor de la asociación (clave . valor)
+     (defun get-valor (lista-asociativa clave)
+       (cdr (assoc clave lista-asociativa)))
+
+     ;; 2. llamamos a la función y devolverá el valor del elemento/asociación (clave . valor)
+     (get-valor lenguajes-favoritos "haskell")
+   #+END_SRC
+** Ejemplo 2 - Obtener la Clave-Valor de un elemento/asociación
+   #+BEGIN_SRC elisp
+     ;; si evaluamos esta variable, debería devolver una lista asociativa
+     ;; que debimos evaluar previo a probar este ejemplo
+     lenguajes-favoritos
+
+     ;; 1. definimos la función
+     ;; 1.1 con assoc obtenemos un elemento (clave . valor) de la lista que
+     ;; tenga como clave la pasada por parámetro a la función
+     ;; 1.2 obtenemos del elemento anterior el valor de la asociación (clave . valor)
+     (defun get-valor (lista-asociativa clave)
+       (cdr (assoc clave lista-asociativa)))
+
+     ;; 2. definimos otra función que reutiliza la anterior (función de orden superior)
+     ;; el comportamiento es el mismo, ya que usamos cons cells osea elementos de al forma (clave . valor)
+     (defun get-atributo (lista-asociativa clave atributo)
+       (cdr (assoc atributo (get-valor lista-asociativa clave))))
+
+     ;; 3. llamamos a la función y devolverá el valor del elemento/asociación (clave . valor)
+     (get-valor lenguajes-favoritos "haskell")
+     (get-atributo lenguajes-favoritos "haskell" :descripcion)
+
+   #+END_SRC
+* Función cons
+** Conceptos
+  - La función ~cons~ agrega un elemento a una lista
+  - Es una función que no genera *efecto de lado* sobre las listas
+  - El 1º parámetro
+    - Si el 2º parámetro es una lista, entonces éste será el elemento a agregar a esa lista
+    - Si el 2º parámetro NO es una lista, entonces se crea un *par punteado*
+  - El 2º parámetro
+    - Puede ser una lista, que se puede crear como ~'(elem1 elem2 ..)~ ó ~(list elem1 elem2 ..)~
+    - Puede ser una variable/símbolo declarada dentro de la función con el apóstrofe como prefijo ó definida fuera con ~setq~
+    - Puede ser un tipo de dato primitivo (literal cadena, constante numérica, ...)
+  - El 1º parámetro será el elemento a agregar a la lista
+    (/suponiendo que el 2º parámetro es una lista, si no se crea un par punteado/)
+  - El 2º parámetro será la lista donde agregará los elementos
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     ;; Agrega el 1 a la lista '(2) quedando '(1 2)
+     (cons 1 '(2))
+
+     ;; Agrega el 1 a la lista '(2 3 4) quedando '(1 2 3 4)
+     (cons 1 (list 2 3 4))
+
+
+     ;; Crea un par punteado (1 . 2)
+     (cons 1 2)
+
+     ;; Crea un par punteado ("a" . 2)
+     (cons "a" 2)
+
+     ;; Crea un par punteado (a . b)
+     (cons 'a 'b)
+
+     ;; Crea un par punteado (a . 1)
+     (cons 'a 1)
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Building-Lists.html][Building Lists (gnu.org)]]
+* Función acons
+** Conceptos
+   - La función ~acons~ agrega al comienzo de una (alist) *Lista Asociativa* un *par punteado* como elemento (/lo agrega con la notación "dotted pair"/)
+   - El 1º parámetro es el elemento a agregar
+   - El 2º parámetro es la (alist) *Lista asociativa*
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     ;; - en el 1º parámetro estamos declarando una variable/símbolo `a' por usar el apóstrofe,
+     ;; y le asignamos como valor la consante entera `1'
+     ;; - en el 2º parámetro creamos una (alist) de dos elementos/asociaciones
+     ;;
+     ;; - con `acons' agregamos el par punteado (a . 1) en la (alist)
+     ;; quedando ((a . 1)) (b . 2) (c . 3))
+     (acons 'a 1 '((b . 2) (c . 3)))
+   #+END_SRC
+* Función assoc
+** Conceptos
+   - La función ~assoc~ obtiene un elemento de una (alist) *Lista Asociativa*, buscando al elemento por su clave
+   - El 1º parámetro es la clave del elemento/asociación a buscar
+   - El 2º parámetro es la (alist) *Lista Asociativa*
+** Ejemplos
+*** Ejemplo 1
+  #+BEGIN_SRC elisp
+    ;; - El 1º parámetro es la clave del elemento/asociación que queremos buscar
+    ;; - El 2º parámetro es una (alist) de 2 elementos
+    ;; -
+    ;; - `assoc' devolverá como elemento un par punteado (clave . valor)
+    ;; si encuentra la clave en la (alist), si no devuelve `nil'
+    (assoc 'b '((a . 1) (b . 2)))
+  #+END_SRC
+* Lista de Propiedades y Lista Asociativas
+** Conceptos
+   #+BEGIN_QUOTE
+   Usually *alists are employed as simple data structures*. They are easy to use but inefficient.
+   If you are running into performance issues, consider using hash tables instead
+   
+   *Plists are used when attaching information to symbols*. The doc strings of variables and functions,
+   for example, are just a key-value association in the property list of the symbol in question.
+   #+END_QUOTE
+** Ejemplo
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     ;; Definimos una variable `persona'
+     ;; y le asignamos una Lista de propiedades
+     (setq persona '(:nombre "carlos" :apellido "gimenez"))
+
+     ;; alternativa
+     (setq persona (list :nombre "carlos" :apellido "gimenez"))
+
+     ;; - Definimos dos variables locales a let,
+     ;; y le asignamos un elemento de la lista de propiedades
+     ;; - Devolvemos una lista con los mismos atributos
+     (let ((nombre (plist-get persona :nombre))
+           (apellido (plist-get persona :apellido)))
+       (list
+        (cons 'nombre nombre)
+        (cons 'apellido apellido)))
+   #+END_SRC
+*** Ejemplo 2 - Función que recibe una Lista de propiedades y devuelve una Lista Asociativa
+   #+BEGIN_SRC elisp
+     ;; 1. Usamos `let' para definir varias variables
+     ;; son variables locales, viven sólo dentro de ese ámbito/scope en let
+     ;; Ej. (let ((var1 valor) (var2 valor) ...) (cuerpo donde usamos esas variables))
+     ;;
+     ;; 2. Usamos `plist-get' para obtener un elemento de la lista de propiedades
+     ;;
+     ;; 3. Usamos `list' para crear una lista con las variables definidas
+     ;; y le asociamos una variable con el mismo nombre quedando (clave . valor)
+     ;; donde clave asociada es la variable declarada con el apóstrofe
+     ;; (el resultado será una lista con elementos asociados como (clave . valor)
+     ;;
+     ;; - al usar el apostrofe estamos declarando una variable)
+     ;; - al usar `cons' estamos agregando un elemento en una lista
+     ;; (el 1º parámetro suele ser el elemento, y el 2º la lista)
+     (defun registrar-proyecto (&rest propiedades)
+       "Registrar un proyecto.
+
+       Los parámetros que recibe:
+       NOMBRE el nombre del proyecto principal en la raíz del dirctorio
+       PATH se especifíca la ruta donde esta el código fuente del proyecto
+       LENGUAJE se especifíca que lenguaje de programación se usa
+       BUILD se especifíca el comando para construir el proyecto
+       RUN se especifíca el comando para iniciar el proyecto
+       TESTS se especifíca el comando para correr las pruebas unitarias"
+       (let ((nombre (plist-get propiedades :nombre))
+             (path (plist-get propiedades :path))
+             (lenguaje (plist-get propiedades :lenguaje))
+             (build (plist-get propiedades :build))
+             (run (plist-get propiedades :run))
+             (tests (plist-get propiedades :tests)))
+         (list
+          (cons 'nombre nombre)
+          (cons 'path path)
+          (cons 'lenguaje lenguaje)
+          (cons 'build build)
+          (cons 'run run)
+          (cons 'tests tests))))
+
+     ;; Invocamos la función y le pasamos por parámetro la Lista de propiedades
+     ;; cada elemento de la lista es del tipo :clave1 valor :clave2 valor
+     (registrar-proyecto
+      :nombre "manu-games"
+      :path "usr/games/manu-games"
+      :lenguaje "javascript"
+      :build "npm run build"
+      :run "gulp --production"
+      :tests "npm run tests")
+
+     (registrar-proyecto
+      :nombre "manu-docs"
+      :path "usr/app/manu-docs"
+      :lenguaje "javascript"
+      :build "make build"
+      :run "make start"
+      :tests "make tests")
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.emacswiki.org/emacs/AlistVsPlist][Alist Vs. Plist (emacswiki.org)]]
+*** Referencias Issues
+   1. [[https://answerbun.com/emacs/why-does-emacs-use-both-propertly-lists-and-association-lists/][Why does emacs use both property lists and association lists (answerbun.com)]]

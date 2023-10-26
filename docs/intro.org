@@ -1,0 +1,302 @@
+#+STARTUP: inlineimages
+* Documentación
+** Comandos
+  |-----------------------------------+---------------------------------------------|
+  | Comando                           | Descripción                                 |
+  |-----------------------------------+---------------------------------------------|
+  | ~C-h-k~ ó  ~M-x describe-key~     | Describe que función utiliza un atajo       |
+  | ~C-h b~ ó ~M-x describe-bindings~ | Lista todos los atajos (de todos los modos) |
+  | ~C-h f~ ó ~M-x describe-function~ | Muestra la documentación de una función     |
+  |-----------------------------------+---------------------------------------------|
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Documentation-Tips.html][Documentation Tips (gnu.org)]]
+   2. [[https://www.emacswiki.org/emacs/DocString][Doc String (emacswiki.org)]]
+*** Referencias Extraoficiales
+   1. [[https://kitchingroup.cheme.cmu.edu/blog/2017/03/22/A-better-defun-for-emacs-lisp/][A better defun for emacs lisp (kitchingroup.cheme.cmu.edu)]]
+   2. [[http://xahlee.info/emacs/emacs/inline_doc.html][Doc String Markup (xahlee.info)]]
+   3. [[https://wilkesley.org/~ian/xah/emacs/inline_doc.html][Inline Docstring Markup (wilkesley.org)]]
+   4. [[https://www.askpython.com/python/python-docstring][Python Docstring (askpython.com)]]
+   5. [[https://dev.to/highflyer910/what-is-a-python-docstring-44eo][What is Python docstring? (dev.to)]]
+* Scratch Buffer + Interprete IELM
+** Conceptos
+   - El *Scratch Buffer* se puede usar en conjunto con el *Interprete IELM*
+** Scratch Buffer
+  - Para probar comandos *elisp* sin la necesidad de recargar *emacs*
+  - Es útil para probar configuraciones de emacs
+  - Podemos cargarlo de tres opciones
+    1) En *evil mode* con el atajo ~SPC b s~ y se abre en el buffer actual
+    2) En *evil mode* con ~SPC b b~ para listar los buffers y lo elegimos
+    3) En *god mode* ~C-x C-b~ ó bien ~M-x list-buffers~
+** Interprete IELM
+*** Conceptos
+  - Sus siglas hacen referencia a *Emacs-Lisp Interactive Shell*
+  - Para evaluar expresiones ó funciones desde una terminal
+  - Para cargarlo ejecutar ~M-x ielm~
+  - Una alternativa al *interprete IELM* es ~M-x expression~ ó ~M-:~ para evaluar el buffer actual desde el minibuffer
+*** Comandos
+  |------------+------------------------------------------------------------|
+  | Atajo      | Descripción                                                |
+  |------------+------------------------------------------------------------|
+  | ~C-<Up>~   | Selecciona del historial de comandos, el comando anterior  |
+  | ~C-<Down>~ | Selecciona del historial de comandos, el comando siguiente |
+  | ~C-c C-l~  | Carga un nuevo buffer con el historial de comandos         |
+  |------------+------------------------------------------------------------|
+* Expresiones Simbólicas (sexp)
+** Conceptos
+   - Se las conoce por ~s-expresion~ ó ~sexp~ a cualquier expresión entre () que no sea una función ...(?)
+   - Usan la notación poláca/prefija (Ej. ~(+ 1 1)~ ó ~(* 1 (+ 2 2)~ ...)
+   - Representan una *estructura de datos de árbol* basadas en *listas anidadas* (/donde cada sublista es un subárbol/)
+   - El primer elemento de una expresión simbólica es un operador y el resto son elementos
+** Ejemplo
+*** Ejemplo 1 - Operaciones ariméticas
+   #+BEGIN_SRC elisp
+     ;; las siguientes son expresiones simbólicas
+
+     ;; - el primer elemento es el operador +
+     ;; - el resto de los elementos son los operandos 2 y 4
+     (+ 2 4)
+
+     ;; - el primer elemento es el operador *
+     ;; - el resto de los elementos son los operandos 1 y el resultado de una función (+ 2 2)
+     (* 1 (+ 2 2))
+   #+END_SRC
+*** Ejemplo 2 - Dígrafo de una expresión-s con operadores primitivos
+   #+BEGIN_SRC dot :file ../assets/img/digrafo-sexp.png :exports results
+     digraph G {
+       labelloc="t"
+       label="Expresión Simbólica"
+
+       subgraph cluster_0{
+       "*" [label="* función"]
+       "*" -> 1
+       "*" -> "+"
+       label="(* 1 (+ 2 4))"
+
+       subgraph cluster_1{
+         "+" [label="+ función"]
+         "+" -> 2
+         "+" -> 4
+         color=purple
+         style=dashed
+         label="(+ 2 4)"
+       }
+       }
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:../assets/img/digrafo-sexp.png]]
+
+*** Ejemplo 3 - Dígrafo de una expresión-s con una función propia
+   #+BEGIN_SRC dot :file ../assets/img/digrafo-sexp-defun1.png :exports results
+     digraph G {
+       labelloc="t"
+       label="(defun mutiplicar-por-siete(numero) (* 7 numero))"
+
+       a->b
+       b->c
+       b->d
+       a [label="defun multiplicar-por-siete(numero)"]
+       b [label="*"]
+       c [label=7]
+       d [label="numero"]
+     }
+
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:../assets/img/digrafo-sexp-defun1.png]]
+
+*** Ejemplo 4 - Dígrafo de una expresión-s con varias funciones propias
+   #+BEGIN_SRC dot :file ../assets/img/digrafo-sexp-defun2.png :exports results
+     digraph G {
+       labelloc="t"
+       label="(defun mutiplicar-por-siete(num) (interactive \"n\") (message \"result: %d\" (* 7 num))"
+
+       subgraph cluster_0{
+         label="Expresión Simbólica (sexp)"
+         a->b
+         a->c
+         color=orange
+
+         subgraph cluster_0{
+           label="(message \"result: %d\" (* 7 num))"
+           c->d
+           c->e
+           color=blue
+
+           subgraph cluster_1{
+             label="(* 7 num)"
+             e->f
+             e->g
+             color=hotpink
+           }
+         }
+       }
+
+       a [label="defun multiplicar-por-siete(num)"]
+       b [label="interactive \"n\" "]
+       c [label="message"]
+       d [label=" \"result: %d\" "]
+       e [label="*"]
+       f [label=7]
+       g [label="num"]
+       //b [label="message \"hola\""]
+     }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:../assets/img/digrafo-sexp-defun2.png]]
+* Operaciones básicas
+** Operaciones relacionales
+   #+BEGIN_SRC elisp :exports both
+     ;; en el minibuffer muestra boolean `t' (true)
+     (= 2 (+ 1 1))
+
+     ;; alternativa al `='
+     (eq 2 (+ 1 1))
+
+     ;; en el minibuffer muestra `nil' (false)
+     (= 2 (+ 0 1))
+
+     ;; alternativa al `='
+     (eq 2 (+ 0 1))
+
+     ;; el resultado será `nil'
+     (< 1 1)
+
+     ;; el resultado será el boolean `t' (true)
+     (< 1 (+ 1 1))
+
+     ;; en el minibuffer muestra boolean `t' (true)
+     (equal (list 1 2 3) (list 1 2 3))
+   #+END_SRC
+** Operaciones ariméticas
+   #+BEGIN_SRC elisp :exports both
+     ;; en el minibuffer muestra `2'
+     (+ 1 1)
+
+     ;; tu sabrás (?)
+     (sin pi)
+
+     ;; tu sabrás (?)
+     (cos pi)
+
+     ;; tu sabrás (?)
+     (tan (/ pi 2))
+   #+END_SRC
+** Condicionales simples/compuestos
+   #+BEGIN_SRC elisp :exports both
+     ;; - el booleano true se nombra `t'
+     ;; - si se cumple muestra el primero, si no lo segundo
+     (if t "si se cumple muestra esto" "si no se cumple muestra esto")
+
+     ;; - si la expresion de la condición es distinta de `nil' entonces es true
+     (if nil "si se cumple muestra esto" "si no se cumple muestra esto")
+
+     ;; como la expresión 123 es distinta de `nil' la considera verdadera
+     (if 123 "si se cumple muestra esto" "si no se cumple muestra esto")
+   #+END_SRC
+* Sentencia de Selección - If
+** Conceptos
+   - La sintáxis para un *condicional simple* es ~(if (condicion) operacionIF)~
+   - La sintáxis para un *condicional compuesto* es ~(if (condicion) operacionIF operacionELSE)~
+** Ejemplos
+*** Ejemplo 1 - Condicional Simple y la funciones (>) y (message)
+  #+BEGIN_SRC elisp
+    ;; el (> 5 4) es como haskell, 5 es el primer agumento y 4 el segundo
+
+    (if(> 5 4)             ;; criterio
+        (message "wow, 5 es mayor que 4!"))  ;; resultado si se cumple
+  #+END_SRC
+
+  #+RESULTS:
+  : wow, 5 es mayor que 4!
+*** Ejemplo 2 - Definiendo una función con un Condicional Compuesto y las funciones (equal) y (message)
+  #+BEGIN_SRC elisp
+    (defun tipo-animal (tipo)                      ;; defun nombre (lista-argumentos)
+      "Imprime un mensaje segun el tipo de animal" ;; "documentación", breve descripción de la función
+      (if (equal tipo 'fiera)                      ;; cuerpo parte-si
+          (message "Cuidado! Corré!")              ;; cuerpo parte-then
+          (message "No es peligroso")))            ;; cuerpo parte-else
+
+    (tipo-animal 'fiera)
+    (tipo-animal 'cebrita)
+  #+END_SRC
+
+  #+RESULTS:
+  : No es peligroso
+* Evaluar Funciones y Expresiones Simbólicas
+** Evaluar una expresión simbólica (sexp)
+   - Posicionamos el cursor al final de la expresión y tenemos dos opciones
+     1) En *god mode* el atajo ~C-x C-e~ ó.. ~C-x eval-last-sexp~
+     2) En *evil mode* el atajo ~, e e~
+** Evaluar una función
+   - Posicionamos el cursor dentro de la fución y tenemos dos opciones
+     1) En *god mode* el atajo ~C-x eval-defun~
+     2) En *evil mode* ~, e f~
+** Crear atajo para evaluar una función
+   #+BEGIN_SRC elisp :exports both
+     ;; - definimos la función
+     ;; - para evaluarla ejecutar `M-x eval-defun' ó `, e f'
+     ;; (también podemos evaluarla con `C-x C-e' con el cursor al final de la función)
+     ;; - para invocarla ejecutamos `M-x imprimir-hora-actual'
+     (defun imprimir-hora-actual()
+       "Esta función imprime la hora actual"
+       (interactive)
+       (message (current-time-string)))
+
+     ;; - creamos el atajo `C-c t' para invocar la función `imprimir-hora-actual'
+     ;; - para evaluarla debemos posicionar el cursor al final y ejecutar `C-x C-e'
+     (global-set-key (kbd "C-c t") 'imprimir-hora-actual)
+   #+END_SRC
+* Definir Listas
+** Conceptos
+   - La sintáxis es ~'(atomo1 atomo2 ...)~
+   - Cada elemento de una lista se llama *átomo*
+   - Todas las palabras de un string se consideran como un sólo átomo
+   - LLeva como prefijo el símbolo apóstrofe ~'~ seguido de la lista de elementos delimitados por un paréntesis ~()~
+   - No importa si le agregamos muchos espacios ó saltos de linea, seguirá siendo una lista con la misma cantidad de átomos
+** Ejemplos
+*** Ejemplo 1 - Lista vacía
+  #+BEGIN_SRC elisp :exports both
+    '()
+  #+END_SRC
+
+  #+RESULTS:
+
+*** Ejemplo 2 - Lista de Constantes numéricas y Operadores como átomos
+  #+BEGIN_SRC elisp :exports both
+    '(+ 2 2)
+
+    ; no confundir con la funcion (+ 2 2)
+    ; el de arriba empieza con el apóstrofe, por tanto es una lista
+  #+END_SRC
+
+  #+RESULTS:
+  | + | 2 | 2 |
+*** Ejemplo 3 - Lista con saltos de linea
+  #+BEGIN_SRC elisp :exports both
+    '(rose
+      violet
+      daisy
+      buttercup)
+  #+END_SRC
+
+  #+RESULTS:
+  | rose | violet | daisy | buttercup |
+*** Ejemplo 4 - Lista con espacios
+  #+BEGIN_SRC elisp :exports both
+    '(rose violet daisy buttercup)
+  #+END_SRC
+
+  #+RESULTS:
+  | rose | violet | daisy | buttercup |
+*** Ejemplo 5 - Lista con literales cadena cómo átomos
+  #+BEGIN_SRC elisp :exports both
+    '(esta lista tiene "un literal cadena" "otro string")
+  #+END_SRC
+
+  #+RESULTS:
+  | esta | lista | tiene | un literal cadena | otro string |

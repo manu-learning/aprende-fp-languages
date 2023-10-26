@@ -1,0 +1,437 @@
+#+STARTUP: inlineimages
+* Funciones
+** Conceptos
+   - La sintáxis es ~(defun nombre-de-funcion(parametro1 parametro2 ...) "breve descripción" (funcion1) (funcion2) ...)~
+   - Está delimitada por paréntesis
+   - La estructura para definir una función es
+     1) Comienza con la keyword ~defun~
+     2) Seguido del identificador/nombre y de los parámetros delimitados por paréntesis ~(param1 param2)~
+     3) Seguido *opcionalmente* de una breve descripción delimitada por comillas dobles ~""~
+     4) Seguido del cuerpo de la función (agregamos las funciones que queramos delimitadas cada una por paréntesis)
+** Ejemplos
+*** Ejemplo 1 - Una función hello-world que no recibe parámetros
+  #+BEGIN_SRC elisp :exports both
+    (defun hola-mundo()
+      "Esta función sólo saluda"
+      (message "Hola Mundo!"))
+
+    (hola-mundo)
+  #+END_SRC
+*** Ejemplo 2 - Definir una función arimética que recibe un parámetro
+  #+BEGIN_SRC elisp :exports both
+    (defun multiplicar-por-siete (numero)
+      "Esto es un comentario, y describimos que multiplica a `numero' por siete"
+      (* 7 numero))
+
+    (multiplicar-por-siete 3)
+  #+END_SRC
+
+  #+RESULTS:
+  : 21
+*** Ejemplo 3 - Parámetros de una función usados por otras funciones invocadas en ese scope
+  #+BEGIN_SRC elisp
+    (defun a-exists-only-in-my-body (a)
+      (other-function))
+
+    (defun other-function ()
+      (message "I see `a', its value is %s" a))
+
+    (a-exists-only-in-my-body 5)
+  #+END_SRC
+
+  #+RESULTS:
+  : I see ‘a’, its value is 5
+*** Ejemplo 4 - Definir la Función Recursiva Factorial
+  #+BEGIN_SRC elisp :exports both
+    ;; - Definimos una función recursiva porque se llama a si misma
+    ;; - Caso base: Si n es cero, se corta la recursividad
+    ;; - Caso recursivo: Si n no es cero, multiplica n veces el valor por valor-1
+    (defun factorial (n)
+      (if (= n 0)
+          1
+        (* n (factorial (- n 1)))))
+
+    (factorial 5)
+  #+END_SRC
+
+  #+RESULTS:
+  : 120
+
+** Referencias
+*** Referencias Oficiales
+  1. [[https://www.gnu.org/software/emacs/manual/html_node/eintr/defun.html][The defun macro (gnu.org)]]
+* Funciones sobre Buffers
+** Conceptos
+** Ejemplos
+*** Ejemplo 1 - Obtener la ruta absoluta del buffer
+  #+BEGIN_SRC elisp
+    (buffer-file-name)
+  #+END_SRC
+
+  #+RESULTS:
+  : /home/jelou/Documentos/git/aprende-elisp/test1.org
+*** Ejemplo 2 - Obtener el nombre del buffer y su extensión
+  #+BEGIN_SRC elisp
+    (buffer-name)
+  #+END_SRC
+
+  #+RESULTS:
+  : test1.org
+*** Ejemplo 3 - Obtener el tamaño del buffer
+  #+BEGIN_SRC elisp
+    (buffer-size)
+  #+END_SRC
+
+  #+RESULTS:
+  : 4953
+* Funciones Interactivas
+** Conceptos
+   - Una función interactiva es aquella que podemos invocar desde el *minibuffer* con el atajo ~M-x~
+   - Se agrega en el cuerpo de la función la función ~(interactive "prefijo texto-opcional")~
+   - El *prefijo* de ~interactive~ indica el tipo de dato que tendrá como input/entrada
+** Invocar función interactiva desde el minibuffer
+   #+BEGIN_QUOTE
+   1) Pegar el código en un *buffer elisp*
+   2) Colocar el cursor dentro de la función definida con ~defun~
+   3) Para evaluarla presionar ~M-x eval-defun~
+   4) Para ejecutarla ~M-x nombre-de-la-funcion~
+
+   *Observación:* Recordá que con el atajo ~M-x~ se abre el *minibuffer*
+   #+END_QUOTE
+** Invocar función interactiva con atajos
+   #+BEGIN_QUOTE
+   1) Pegar el código en un *buffer elisp*
+   2) Definir el siguiente atajo ~(global-set-key (kbd "C-;") #'nombre-tu-funcion)~
+   3) Evaluar el atajo con ~M-x eval-defun~
+   4) Para ejecutarla presionar el atajo, en este caso ~C-;~
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Definir una función interactiva que recibe una constante numérica entera
+  #+BEGIN_SRC elisp :exports both
+    ;; a "interactive" le pasamos por parámetro "n" como prefijo
+    ;; porque el parámetro que recibe la función es una constante numérica entera
+    ;; (si fuera un string osea literal cadena usaríamos "s")
+    (defun multiplicar-por-siete(numero)
+      "Multiplicar `numero` por siete"
+      (interactive "nIngrese el número:")
+      (message "El resultado es %d" (* 7 numero)))
+
+  #+END_SRC
+*** Ejemplo 2 - Definir una función interactiva que recibe un literal cadena (string)
+  #+BEGIN_SRC elisp :exports both
+    ;; a "interactive" le pasamos por parámetro "s" como prefijo
+    ;; porque el parámetro que recibe la función es un literal cadena (string)
+    (defun saludar-por-nombre(nombre)
+      "Saluda personas por su nombre"
+      (interactive "sIngrese su nombre:")
+      (message "Hola! Tu nombre es %s!" nombre))
+  #+END_SRC
+* Función concat
+** Conceptos
+  - La sintáxis es ~(concat param1 param2 ...)~
+  - Retorna un literal cadena (string)
+  - Los parámetros pueden ser tipos primitivos (strings, enteros, ..) ó funciones
+** Ejemplos
+*** Ejemplo 1 - Concatenar Strings
+  #+BEGIN_SRC elisp
+    (concat "hola" "como")
+  #+END_SRC
+
+  #+RESULTS:
+  : holacomo
+*** Ejemplo 2 - Concatenar resultados de funciones
+  #+BEGIN_SRC elisp
+    ;; pasamos funciones como argumentos
+    ;; el (+ 1 2) es similar a haskell
+    (concat "hola " (number-to-string (+ 1 2)) " xd")
+  #+END_SRC
+
+  #+RESULTS:
+  : hola 3 xd
+** Referencias
+*** Referencias Oficiales
+   2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Strings.html][Creating Strings (gnu.org)]]
+* Función message
+** Conceptos
+  - La sintáxis es ~(message string argumento1 argumento2 ...)~
+  - Imprime un string en el *minibuffer*
+** Ejemplos
+*** Ejemplo 1 - Imprimir un hola-mundo
+  #+BEGIN_SRC elisp :exports both
+    ;; funciona como un echo o print
+    (message "hola mundo")
+  #+END_SRC
+
+  #+RESULTS:
+  : hola mundo
+*** Ejemplo 2 - Pasar argumentos y mostrarlos con especificadores de formato
+  #+BEGIN_SRC elisp :exports both
+    ;; usamos el %s como especificador de formato que representa un string
+    (message "el nombre del buffer es %s" (buffer-name))
+  #+END_SRC
+
+  #+RESULTS:
+  : el nombre del buffer es README.org
+*** Ejemplo 3 - Pasar argumentos y mostrarlos con especificadores de formato
+  #+BEGIN_SRC elisp
+    ;; - es un formato similar al printf de C
+    ;; - usamos los %s y %d como especificadores de formato
+    ;; - %s para los literales cadena (string)
+    ;; - %d para las constantes numéricas enteras
+    (message "el nombre de buffer es %s y 100+100 es %d" (buffer-name) (+ 100 100))
+  #+END_SRC
+
+  #+RESULTS:
+  : el nombre de buffer es README.org y 100+100 es 200
+* Función Anónima Vs Función Lambda
+** Conceptos
+  - La sintáxis para definir una función lambda es ~(lambda (param1 param2 ..) (cuerpo))~
+  - Podemos aplicar una función lambda con ~funcall~ (es opcional si es una lambda)
+** Ejemplos
+*** Ejemplo 1 - Función Lambda que recibe un parámetro y lo incrementa en 1
+   #+BEGIN_SRC elisp
+     ;; definimos la función lambda, pero no le pasamos parámetros
+     ;; (así no le estaríamos dando uso, porque no podemos invocarla luego..)
+     (lambda (x) (+ 1 x))
+
+     ;; definimos la función lambda y le pasamos parámetros
+
+     ;; le pasamos el 1 por parámetro
+     (lambda (x) (+ 1 x) 1)
+
+     ;; le pasamos el 2 por parámetro
+     (lambda (x) (+ 1 x) 2)
+
+     ;; le pasamos el 3 por parámetro
+     (lambda (x) (+ 1 x) 3)
+   #+END_SRC
+*** Ejemplo 2 - Función Lambda que obtiene el doble
+   #+BEGIN_SRC elisp
+     ;; le pasamos el 2 por parámetro, la evaluará como (* 2 2)
+     (lambda (x) (* 2 x) 2)
+
+     ;; le pasamos el 4 por parámetro, la evaluará como (* 2 4)
+     (lambda (x) (* 2 x) 4)
+   #+END_SRC
+*** Ejemplo 3 - Aplicando Función Lambda con funcall
+   #+BEGIN_SRC elisp
+     ;; aplicamos una función lambda con funcall
+     ;; y le pasamos el 5 por parámetro
+     (funcall (lambda (x) (+ x 1)) 5)
+
+     ;; es opcional usar `funcall' al aplicar una función lambda,
+     ;; en este caso el resultado será el mismo usarlo o no
+     ((lambda (x) (+ x 1)) 5)
+
+     ;; Cuando usamos `funcall'..?
+     ;; Si es una función nombrada (osea fue definida con `defun') que es pasada por parámetro
+     ;; y que se intenta aplicar/llamar/invocar en el cuerpo de esa función
+     ;; que la recibió por parámetro
+   #+END_SRC
+*** Ejemplo 4 - Definir variables que contienen lambdas
+   #+BEGIN_SRC elisp
+     ;; definimos una variable `sumar1' y le asignamos el resultado de la lambda
+     (defvar sumar1 (lambda (x) (+ x 1)))
+     ;; como la variable `sumar1' contiene una función, la llamamos con `funcall'
+     (funcall sumar1 5)
+   #+END_SRC
+*** Ejemplo 5 - Mapear una lista y aplicar una función lambda a cada elemento
+   #+BEGIN_SRC elisp
+     ;; Invocamos la función `mapcar' que recibe dos parámetros
+     ;; 1º parámetro: una función lambda (se aplicará a cada elemento)
+     ;; 2º parámetro: una lista de constantes enteras
+     (mapcar (lambda (x) (+ 1 x)) '(1 2 3 4))
+   #+END_SRC
+* Funciones por parámetro
+** Conceptos
+   - Si pasamos por parámetro una función en una invocación,
+     entonces le agregamos el prefijo ~#'~ al nombre de la función que es parámetro
+   - Si estamos definiendo una función con ~defun~ y queremos aplicar un parámetro que es función usamos ~funcall~
+     (/la llamada a funcall sería sólo dentro del cuerpo de la función que la recibe como parámetro/)
+
+   #+BEGIN_QUOTE
+   Si invocamos una función que recibe por parámetro funciones la sintáxis es
+   ~(funcion-invocada #'nombre-funcion1 #'nombre-funcion2 ... param1 param2 ...)~
+   
+   Si definimos una función con ~defun~ que recibe por parámetro funciones,
+   la sintáxis en el cuerpo de la función para invocar esos parámetros que son función es
+   ~(funcall nombre-funcion param1 param2 ...)~
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Definir funciones que tienen por parámetro Funciones
+   #+BEGIN_SRC elisp
+     ;; - Definimos una función que recibe por parámetro dos funciones y un valor
+     ;; - Usamos `funcall' en el cuerpo de una función para invocar/llamar/aplicar
+     ;; los parámetros que son función
+     (defun sumar-funciones (f1 f2 x)
+       (+ (funcall f1 x) (funcall f2 x)))
+
+     ;; - Definimos otra función que recibe por parámetro dos funciones y un valor
+     ;; - Si no usamos `funcall' en los parámetros que son función, entonces lanzará un error
+     (defun multiplicar-funciones (f1 f2 x)
+       (* (funcall f1 x) (funcall f2 x)))
+   #+END_SRC
+*** Ejemplo 2 - Aplicar/invocar funciones que tienen por parámetro Funciones Lambda
+   #+BEGIN_SRC elisp
+     ;; Definimos una función que recibe por parámetro dos funciones y un valor como tercer parámetro
+     (defun sumar-funciones (f1 f2 x)
+       (+ (funcall f1 x) (funcall f2 x)))
+
+     ;; - Aplicamos/invocamos/llamamos la función `sumar-funciones'
+     ;; y le pasamos por parámetro dos funciones lambda y el valor 5 como tercer parámetro
+     (sumar-funciones (lambda (x) (+ 1 x))
+                      (lambda (x) (* 2 x))
+                      5)
+
+     ;; - Cuando invocamos una función y pasamos por parámetro una función nombrada,
+     ;; necesitamos agregar el prefijo #' al nombre de la función nombrada
+     (sumar-funciones (lambda (x) (+ x 1))  #'elDoble 2)
+   #+END_SRC
+*** Ejemplo 3 - Aplicar funciones que tienen por parámetro Funciones nombradas
+   #+BEGIN_SRC elisp
+     ;; Definimos dos funciones básicas, que pasaremos por parámetro
+     ;; (ambas reciben reciben un único parámetro)
+     (defun incrementarEn1 (n) (+ 1 n))
+     (defun elDoble(n) (* 2 n))
+
+     ;; Aplicamos/invocamos las funciones para probar que se evalúan bien
+     (incrementarEn1 5)
+     (elDoble 5)
+
+     ;; - Aplicamos/invocamos una función que recibe por parámetro dos funciones y el valor 2
+     ;; - Los nombres funciones nombradas deben comenzar con el prefijo #'
+     ;; (pero sólo cuando invocamos una función, en la definición usamos funcall)
+     (sumar-funciones #'incrementarEn1 #'elDoble 2)
+
+     ;; probamos con otra función que también recibe dos funciones y un valor
+     (multiplicar-funciones #'incrementarEn1 #'elDoble 2)
+
+     ;; sólo para las funciones nombradas necesitamos el prefijo #'
+     (sumar-funciones (lambda (x) (+ x 1))  #'elDoble 2)
+   #+END_SRC
+* Funciones Variádicas
+** Conceptos
+  - Una *función variádica* es aquella que recibe un número indefinido de parámetros
+  - Al definir la función, usamos como prefijo la *keyword* ~&rest~ seguido del identificador que representa a lista de parámetros
+  - Al definir la función, en el cuerpo usamos la función ~apply~ si queremos invocar una función y pasarle la lista de parámetros
+
+  #+BEGIN_QUOTE
+  SIEMPRE que hagamos una invocación y pasemos una función por parámetro,
+  debemos agregar el prefijo ~#'~ delante del identificador de la función
+  
+  Por ejemplo ~(apply #'+ numeros)~ al invocar ~apply~ le pasamos como primer parámetro
+  la función de adición ~+~ pero podría haber sido ~#'sumar~ ó ~#'funcion-loca~ y así..
+  #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Función que suma una cantidad indefinida de números
+   #+BEGIN_SRC elisp
+     ;; 1) Definimos la función con `defun' que recibe una cantidad indefinida de parámetros
+     ;; - Con `&rest' decimos que el identificador que le siga tendrá
+     ;; un número indefinido de parámetros, éste los representará
+     ;; - Siempre que pasamos una función por parámetro en una invocación
+     ;; debemos agregar el prefijo #' delante del identificador de la función
+     ;; - En el anterior usamos `apply' en vez de `funcall' porque
+     ;; es una lista de parámetros `numeros'
+     (defun sumar(&rest numeros)
+       (apply #'+ numeros))
+
+     ;; 2) Invocamos la función `sumar'
+     ;; - Le pasamos una cantidad indefinida de parámetros
+     (sumar 1 2 3)
+     (sumar 1 2 3 4)
+
+     ;; Invocamos por separado `apply' para entender como funciona,
+     ;; como es una invocación y el primer parámetro es una función nombrada
+     ;; usamos el prefijo #' delante del identificador de la función
+     (apply #'sumar '(1 2 3 4))
+     (apply #'sumar (list 1 2 3 4))
+     (apply #'sumar (list 1 2 3 4 (* 2 2)))
+
+     ;; Invocamos a `apply' y pasamos una lista vacía
+     (apply #'sumar ())
+     (apply #'sumar '())
+     (apply #'sumar nil)
+   #+END_SRC
+*** Ejemplo 2
+   #+BEGIN_SRC elisp
+     ;; Definimos una función que recibe una cantidad indefinida de parámetros
+     (defun sumar(&rest numeros)
+       (apply #'+ numeros))
+
+     ;; Definimos otra función que recibe dos parámetros
+     ;; el segundo parámetro representa la cantidad indefinida de parámetros
+     ;; y por ser una lista de parámetros usamos `apply' en vez de `funcall'
+     (defun funcion-loca(x &rest xs)
+       (* x (apply #'sumar xs)))
+
+     (funcion-loca 2 1 2 3)
+     (funcion-loca 2 1 2 3 4)
+     (funcion-loca 2 1 2 3 4 5)
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Argument-List.html][Argument List (gnu.org)]]
+   2. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Calling-Functions.html][Calling functions (gnu.org)]]
+*** Referencias Issues
+   1. [[https://stackoverflow.com/questions/4970111/what-does-rest-mean-in-elisp/4970594][What does &rest mean? (stackoverflow.com)]]
+* Funciones con parámetros opcionales
+** Conceptos
+  - Usamos como prefijo la *keyword* ~&optional~ y los parámetros que le sigan serán opcionales
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     (defun imprimir-empleado (nombre &optional apellido edad)
+       (if edad
+           (message "Su nombre completo es %s %s y tiene %d años" nombre apellido edad)
+         (message "Su nombre completo es %s %s" nombre apellido)))
+
+     (imprimir-empleado "carlitos")
+     (imprimir-empleado "carlitos" "fernandez" 101)
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+   1. [[https://www.gnu.org/software/emacs/manual/html_node/eintr/Optional-Arguments.html][Elisp - Optional Arguments (gnu.org)]]
+*** Referencias Extraoficiales
+   1. [[http://xahlee.info/emacs/emacs/elisp_optional_params.html][Function Optional Parameters (xahlee.info)]]
+* Función Funcall Vs Función Apply
+** Conceptos
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC elisp
+     ;; Usamos `apply' porque le pasamos a `myfun' una lista de parámetros
+     (defun funcion-loca-1(&rest args)
+       (apply #'myfun args))
+
+     ;; Usamos `funcall' porque le pasamos a `myfun' sólo dos parámetros
+     (defun funcion-loca-2(a b)
+       (funcall #'myfun a b))
+   #+END_SRC
+*** Ejemplo 2 - Pasandole la función de adición a Apply
+   #+BEGIN_SRC elisp
+     ;; 1º parametro: una función (se aplicará sobre cada elemento de lista que está como 2º parámetro)
+     ;; 2º parámetro: una lista
+     (apply '+ '(1 2 4 5))
+     (apply '+ (list 1 2 4 5))
+   #+END_SRC
+*** Ejemplo 3 - Usando funcall y apply
+   #+BEGIN_SRC elisp
+     ;; - Con `&rest' decimos que el identificador que le siga tendrá
+     ;; un número indefinido de parámetros, éste los representará
+     ;; - Siempre que pasamos una función por parámetro en una invocación
+     ;; debemos agregar el prefijo #' delante del identificador de la función
+     (defun sumar(&rest numeros)
+       (apply #'+ numeros))
+
+     (sumar 1 2 3 4)
+
+     ;; - En el anterior usamos `apply' en vez de `funcall' porque
+     ;; se le pasaba una lista de parámetros `numeros'
+     ;; - En este usamos `funcall' porque son parámetros por separado `x y'
+     (defun operar(operador x y)
+       (funcall operador x y))
+
+     (operar #'+ 1 2)
+   #+END_SRC
+** Referencias
+*** Referencias Issues
+   1. [[https://stackoverflow.com/questions/3862394/when-do-you-use-apply-and-when-funcall][When do you use apply and funcall? (stackoverflow.com)]]

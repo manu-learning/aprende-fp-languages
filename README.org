@@ -1,0 +1,52 @@
+#+STARTUP: inlineimages
+  #+BEGIN_COMMENT
+  https://github.com/caiorss/Emacs-Elisp-Programming/blob/master/Elisp_Programming.org
+
+  (leyendo.. Strings)
+  https://github.com/caiorss/Emacs-Elisp-Programming/blob/master/Elisp_Programming.org#strings
+  #+END_COMMENT
+* Referencias
+** Referencias Oficiales
+  1. [[https://emacsdocs.org/docs/elisp/Emacs-Lisp][Emacs Docs (emacsdocs.org)]]
+  2. [[https://www.gnu.org/software/emacs/manual/elisp.html][GNU Emacs Lisp Reference Manual (gnu.org)]]
+  3. [[https://graphviz.org/doc/info/attrs.html][Attributes Graphviz (graphviz.org)]]
+** Referencias Extraoficiales
+  2. [[https://caiorss.github.io/Emacs-Elisp-Programming/Elisp_Programming.html][Elisp Programming (caiaorss.github.io)]]
+  3. [[https://www.davidam.com/docu/emacs-lisp-intro-es.html][Programación en Emacs Lisp (davidam.com)]]
+  4. [[http://xahlee.info/emacs/emacs/elisp_idioms_prompting_input.html][Elisp, get user input (xahlee.info)]]
+  5. [[https://learnxinyminutes.com/docs/es-es/elisp-es/][Learn elisp in Y minutes (learnxinminutes.com)]]
+  6. [[https://with-emacs.com/posts/tutorials/almost-all-you-need-to-know-about-variables/][All you need to know about variables (with-emacs.com)]]
+  7. [[https://www.iteramos.com/pregunta/10725/-consejos-para-aprender-elisp-][Consejos para aprender elisp (iteramos.com)]]
+  8. [[https://poesiabinaria.net/2017/09/aprende-utilizar-emacs-abre-mente-desdobla-tus-dedos-trabaja-gusto-se-productivo/][Aprende a usar emacs (poesiabinaria.net)]]
+  9. [[https://github.com/susam/emfy][Emacs setup for general purpose editing/programming (github.com/susam)]]
+  10. [[https://emacstil.com/][Emacs TIL, Blog (emacstil.com)]]
+** Referencias de Issues
+  1. [[https://unix.stackexchange.com/questions/47724/how-to-modify-write-permission-on-current-buffer-in-emacs][How to modify write permission on current buffer (unix.stackexchange.com)]]
+** Referencias Lisp
+  1. [[https://www.inf.utfsm.cl/~noell/PLP-UCV/apunte04.pdf][Intro Programación Funcional (inf.utfsm.cl)]]
+  2. [[http://www.lcc.uma.es/~iaic/LISP3.pdf][LISP Funciones (lcc.uma.es)]]
+** Pendientes
+  #+BEGIN_COMMENT
+  Retomar el link (1) con *Closures*
+  pd: quedaron cosas pendients de listas asociativas/de propiedades, let
+  #+END_COMMENT
+  
+  1. https://github.com/caiorss/Emacs-Elisp-Programming/blob/master/Elisp_Programming.org
+  2. https://github.com/caiorss/Emacs-Elisp-Programming
+  3. http://www.togores.net/vl/curso/lisp/bases
+  4. https://www.cs.us.es/~jalonso/publicaciones/1991-Lisp.pdf
+  5. https://alhassy.github.io/ElispCheatSheet/
+  6. https://developpaper.com/emacs-lisp/
+  7. https://mullikine.github.io/posts/currying-in-emacs-lisp/
+  8. https://developpaper.com/emacs-lisp/
+  9. https://github.com/chrisdone/elisp-guide#debugging
+  10. https://github.com/emacs-evil/evil/blob/master/evil-commands.el
+  11. google: elisp debugger
+  12. https://caiorss.github.io/Emacs-Elisp-Programming/Elisp_Programming.html#sec-3-7-1
+  13. https://www.davidam.com/docu/emacs-lisp-intro-es.html
+  14. https://www.gnu.org/software/emacs/manual/html_node/elisp/Mapping-Functions.html
+  15. https://github.com/manu-xdev/emacs-from-scratch
+  16. https://github.com/daviwil/emacs-from-scratch/blob/master/show-notes/Emacs-Lisp-03.org
+  17. https://wilkesley.org/~ian/xah/emacs/elisp_idioms_prompting_input.html
+  18. http://xahlee.info/emacs/emacs/elisp_interactive_form.html
+  19. https://www.youtube.com/watch?v=6tLbEtBaQfc
