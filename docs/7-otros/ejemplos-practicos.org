@@ -1,0 +1,495 @@
+* Un Androide Simétrico
+** Ejemplo 1 - Aplicando recursividad con loop y recur
+   #+BEGIN_QUOTE
+   Una explicación muy general de la función ~cuerpo-androide-simetrico~ sería..
+   1. bindeamos/vinculamos el vector de map en ~componentes-pendientes~
+      y bindeamos un vector vacío a ~cuerpo-simetrico~ que iremos agregando componentes en los llamados recursivos
+   2. mientras haya componentes sin revisar, aplicamos el concepto de *destructuring* en ~componentes-pendientes~
+      para separar la cabeza ~componente-revisado~ y la cola ~resto-componentes~ (/aunque éste sea un vector, clojure lo permite/)
+   3. hacemos el llamado recursivo pasando la cola ~resto-componentes~ como parámetro
+      que volverá a aplicarse *destructuring* hasta no quedar elementos
+   4. agregamos en el vector ~cuerpo-simetrico~ cada ~componente-revisado~
+      y aplica nuestra función de simetría si el patrón de la regex coincide devolviendo el componente simétrico faltante
+   5. agregamos los componentes creando un ~set~ para evitar que los elementos que no coincidan con la regex estén repetidos
+     (/Ej. cabeza, naríz/)
+   #+END_QUOTE
+
+  #+BEGIN_SRC clojure
+    (def androide-cuerpo-asimetrico [{:nombre "cabeza" :size 3}
+                                     {:nombre "ojo-izquierdo" :size 1}
+                                     {:nombre "pierna-izquierda" :size 4}
+                                     {:nombre "brazo-izquierdo" :size 4}
+                                     {:nombre "hombro-izquierdo" :size 1}
+                                     {:nombre "boca" :size 1}
+                                     {:nombre "nariz" :size 1}])
+
+    (defn componente-cibernetico-simetrico
+      [componente]
+      {:nombre (clojure.string/replace (:nombre componente) #"-izquierd(.)$" "-derech$1")
+       :size (:size componente)})
+
+    (defn androide-cuerpo-simetrico
+      "Espera un vector de map con :nombre y :size"
+      [componentes-cuerpo-asimetrico]
+      (loop [componentes-pendientes componentes-cuerpo-asimetrico
+             cuerpo-simetrico []]
+        (if (empty? componentes-pendientes)
+          cuerpo-simetrico
+          (let [[componente-revisado & resto-componentes] componentes-pendientes]
+            (recur resto-componentes
+                   (into cuerpo-simetrico
+                         (set [componente-revisado (componente-cibernetico-simetrico componente-revisado)])))))))
+
+    (androide-cuerpo-simetrico androide-cuerpo-asimetrico)
+  #+END_SRC
+** Ejemplo 2 - Usando reduce
+  #+BEGIN_SRC clojure
+    (def androide-cuerpo-asimetrico [{:nombre "cabeza" :size 3}
+                                     {:nombre "ojo-izquierdo" :size 1}
+                                     {:nombre "pierna-izquierda" :size 4}
+                                     {:nombre "brazo-izquierdo" :size 4}
+                                     {:nombre "hombro-izquierdo" :size 1}
+                                     {:nombre "boca" :size 1}
+                                     {:nombre "nariz" :size 1}])
+
+    (defn componente-cibernetico-simetrico
+      [componente]
+      {:nombre (clojure.string/replace (:nombre componente) #"-izquierd(.)$" "-derech$1")
+       :size (:size componente)})
+
+    ;; - la función pasada como primer parámetro al reduce, se aplica primero sobre la semilla
+    ;; (ó sobre el primer elemento de la colección si no se la definimos) y luego en cada elemento de la colección
+    ;; - la función insert devuelve una colección (ó un vector, será de tipo donde insertamos elementos)
+
+    ;; lógica aplicada en el reduce
+    ;; 1. definimos una función anónima que usará la semilla del reduce como un vector
+    ;; (ya teniendo en mente que el reduce tendrá como semilla un vector vacío, que será pasado como segundo parámetro)
+    ;; 2. la función anónima agregará en el vector un Set con cada componente y su componente simétrico si lo tuviese
+    ;; (si no usaramos Set agregaría dos veces los componentes que no tienen un simétrico, Ej. cabeza, boca, nariz)
+    (defn androide-cuerpo-simetrico
+      "Espera un vector de map con :nombre y :size"
+      [componentes-cuerpo-asimetrico]
+      (reduce (fn [cuerpo-simetrico componente]
+                (into cuerpo-simetrico (set [componente (componente-cibernetico-simetrico componente)])))
+              []
+              componentes-cuerpo-asimetrico))
+
+    (androide-cuerpo-simetrico androide-cuerpo-asimetrico)
+  #+END_SRC
+** Referencias
+   1. https://memory-alpha.fandom.com/es/wiki/Data
+* TODO Alienigenas con simetría radial
+  #+BEGIN_COMMENT
+  falta seguir...
+  #+END_COMMENT
+
+ #+BEGIN_SRC clojure
+   (def alien-imperfecto [{:nombre "cabeza" :size 3}
+                          {:nombre "ojo-izquierdo" :size 1}
+                          {:nombre "pie-izquierda" :size 4}
+                          {:nombre "tentaculo-izquierdo" :size 4}
+                          {:nombre "boca" :size 1}
+                          {:nombre "nariz" :size 1}])
+
+   ;; TODO: utilizar repeat ó similar, queremos evitar la típica iteración for que reutiliza la posición
+   ;; Simetría pentámera: Simetría radial basada en 5 o múltiplos de él (Ej. en los equinodermos)
+   (defn cuerpo-simetria-radial
+     [componente]
+     {:nombre (clojure.string/replace (:nombre componente) #"-izquierd(.)$" "-derech$1") :size (:size componente)})
+
+   (defn alien-completar-cuerpo
+     "Espera un vector de map con :nombre y :size"
+     [alien-cuerpo-imperfecto]
+     (reduce (fn [alien-cuerpo-perfecto parte]
+               (into alien-cuerpo-perfecto (set [parte (cuerpo-simetria-radial parte)])))
+             []
+             alien-cuerpo-imperfecto))
+
+   (alien-completar-cuerpo alien-imperfecto)
+ #+END_SRC
+* Ataque contra Androides Malvados
+** Ejemplo
+   #+BEGIN_SRC clojure
+     (def androide-malvado-asimetrico [{:nombre "cabeza" :size 3}
+                                      {:nombre "ojo-izquierdo" :size 1}
+                                      {:nombre "pierna-izquierda" :size 4}
+                                      {:nombre "brazo-izquierdo" :size 4}
+                                      {:nombre "hombro-izquierdo" :size 1}
+                                      {:nombre "boca" :size 1}
+                                      {:nombre "nariz" :size 1}])
+
+     (defn componente-cibernetico-simetrico
+       [componente]
+       {:nombre (clojure.string/replace (:nombre componente) #"-izquierd(.)$" "-derech$1")
+        :size (:size componente)})
+
+     (defn androide-cuerpo-simetrico
+       "Espera un vector de map con :nombre y :size"
+       [componentes-cuerpo-asimetrico]
+       (reduce (fn [cuerpo-simetrico componente]
+                 (into cuerpo-simetrico (set [componente (componente-cibernetico-simetrico componente)])))
+               []
+               componentes-cuerpo-asimetrico))
+
+     (androide-cuerpo-simetrico androide-malvado-asimetrico)
+
+     (defn atacar
+       [androide-cuerpo-asimetrico]
+       (let [cuerpo-simetrico (androide-cuerpo-simetrico androide-cuerpo-asimetrico)
+             size-total-cuerpo (reduce + (map :size cuerpo-simetrico))
+             componente-objetivo (rand size-total-cuerpo)]
+         (loop [[componente-analizado & componentes-pendientes] cuerpo-simetrico
+                size-componente-analizado (:size componente-analizado)]
+           (if (> size-componente-analizado componente-objetivo)
+             componente-analizado
+             (recur componentes-pendientes (+ size-componente-analizado (:size (first componentes-pendientes))))))))
+
+     (atacar androide-malvado-asimetrico)
+   #+END_SRC
+* Generador de Contadores
+** Generador de Contadores Incrementales
+  #+BEGIN_SRC clojure
+    ;; ésta función que devuelve una función anónima,
+    ;; que espera recibir un argumento
+    (defn generador-contador-incremental
+      "Crea un contador incremental personalizado"
+      [incrementar-en]
+      (fn [num] (+ num incrementar-en)))
+
+    ;; bindeamos/vinculamos al contador una función nombrada
+    ;; pero que devuelve una función anónima que espera recibir un argumento
+    (def incrementar-en-5 (generador-contador-incremental 5))
+
+    ;; le estamos pasando el valor 1 a la función anónima
+    (incrementar-en-5 1)
+  #+END_SRC
+
+** Generador de Contadores Decrecrementales
+  #+BEGIN_SRC clojure
+    (defn generador-contador-decremental
+      "Crea un contador incremental personalizado"
+      [decrementar-en]
+      (fn [num] (- num decrementar-en)))
+
+    (def decrementar-en-2 (generador-contador-decremental 2))
+
+    (decrementar-en-2 4)
+  #+END_SRC
+* Mapset
+  #+BEGIN_SRC clojure
+    ;; los primeros reduce son a modo de práctica
+    ;; para luego entender el mapset
+
+    ;; devuelve un valor
+    (reduce (fn [resultado elemento]
+              (+ resultado elemento))
+            0
+            [1 2 3 4])
+
+    ;; devuelve un set (colección con elementos sin repetir)
+    (reduce (fn [resultado elemento]
+              (into resultado [elemento]))
+            #{}
+            [1 1 3 1])
+
+    (defn mapset
+      [f coleccion]
+      (reduce (fn [resultado elemento]
+                (into resultado [(f elemento)]))
+              #{}
+              coleccion))
+
+    (mapset inc [1 1 2 2])
+  #+END_SRC
+* TODO Listas Enlazadas base para Funciones usadas por Secuencias (con javascript)
+  #+BEGIN_COMMENT
+  Faltaría desarrollar un poco más...
+  #+END_COMMENT
+
+  #+BEGIN_SRC js :results value
+    var node1 = {
+        value: "first",
+        next: node2
+    };
+
+    var node2 = {
+        value: "middle",
+        next: node3
+    };
+
+    var node3 = {
+        value: "last",
+        next: null
+    };
+
+    var first = function(node){
+        return node.value;
+    }
+
+    var rest = function(node){
+        return node.next;
+    }
+
+    var cons = function(newValue, node){
+        return {
+            value: newValue,
+            next: node
+        };
+    }
+
+    //console.log(first(node1));
+    first(node1);
+
+    var map = function(list, transform){
+        if (list == null){
+            return null;
+        }
+        else{
+            return cons(transform(first(list)), map(rest(list), transform))
+        }
+    }
+
+    var valor = first(
+        map(node1, function(val){ return val + " mapeado!"})
+    );
+
+    console.log(valor);
+  #+END_SRC
+
+  #+RESULTS:
+  : first mapeado!
+  : undefined
+
+* Simulación Hacker
+  #+BEGIN_SRC clojure
+    (def proyectos-militares-database
+      {0 {:titulo "Proyecto X" :tiene-clave false :publicado true}
+       1 {:titulo "Proyecto robot humanoide" :tiene-clave true :publicado false}
+       2 {:titulo "Proyecto ataque extraterrestre" :tiene-clave true :publicado false}
+       3 {:titulo "Proyecto demonios entre nostros" :tiene-clave true :publicado false}
+       4 {:titulo "Proyecto mutantes entre nosotros" :tiene-clave false :publicado true}})
+
+    (defn proyecto-militar-detalle
+      [codigo-seguridad]
+      (Thread/sleep 1000)
+      (do
+        (println (format "Analizando el proyecto con codigo=%d en la base de datos..." codigo-seguridad))
+        (get proyectos-militares-database codigo-seguridad)))
+
+    ;; (proyecto-militar-detalle 1)
+
+    (defn vulnerable?
+      [registro]
+      (and (:publicado registro)
+           (not (:tiene-clave registro))
+           registro))
+
+    ;; si vemos en detalle la función anónima sólo recibe el parameter rest (lista con un numero indefinido de parámetros)
+    ;; y luego apply le pasa la lista de parámetros (parameter rest) de forma individual
+    (defn complemento
+      "Recibe una función que devuelva un valor booleano y niega el valor"
+      [funcion]
+      (fn [& parametros]
+        (not (apply funcion parametros))))
+
+    (def no-vulnerable? (complemento vulnerable?))
+
+    (defn detectar-vulnerabilidad-del-sistema
+      [codigos-de-seguridad]
+      (first (filter vulnerable?
+                     (map proyecto-militar-detalle codigos-de-seguridad))))
+
+    (defn detectar-fortaleza-del-sistema
+      [codigos-de-seguridad]
+      (first (filter no-vulnerable?
+                     (map proyecto-militar-detalle codigos-de-seguridad))))
+
+    ;; cada vez que lo evaluemos tardará 5ms aprox.
+    (time (detectar-vulnerabilidad-del-sistema (range 0 5)))
+    (time (detectar-fortaleza-del-sistema (range 0 5)))
+
+    ;; - aprovechamos que map devuelve una secuencia perezosa
+    ;; (el map no evaluará la función que aplica a sus elementos hasta que una función lo solicite, Ej. take, take-while, ...)
+    ;; - los datos se vinculan a lazy-mapped-details luego de evaluar
+    (time (def lazy-mapped-details (map proyecto-militar-detalle (range 0 50))))
+    (time (take 4 lazy-mapped-details))
+  #+END_SRC
+* La Sombra de Innsmouth
+  #+BEGIN_QUOTE
+  Lo que aprendí al escribir esto es que..
+  Hay que pensar de forma topdown, usamos abstracciones que aún no definimos, más adelante se definirán
+  Ej. Recorro y opero cada elemento de una secuencia en el cuerpo de una función,
+  defino como serían (aunque aún siquiera le pasamos la colección a la función por parámetro)
+  y luego de todo eso, entonces le paso la secuencia con los elementos (claro que deben respetar el tipo de dato,
+  que se definió en el cuerpo de la función de como deberían ser)
+  #+END_QUOTE
+
+  #+BEGIN_QUOTE 
+  Detallo la lógica de la función que considero más dificil ~personajes-map~
+  1. pensamos en Recibimos filas del csv y Recorremos cada fila
+     => usemos la función map
+
+  2. definimos que haremos con cada fila
+     => delegemos en una función anónima pasada a map, ésta se aplicará a cada elemento recorrido por map
+
+  3. Recorremos cada columna (caracteristica) de la fila y la Transformaremos de A a B
+     => usemos la función reduce
+  
+  4. definimos que haremos con cada columna de la fila
+    => delegemos en una función anónima pasada al reduce, ésta se aplicará a cada elemento recorrido por reduce
+  
+  5. pensamos que devolverá el reduce, queremos un map {:clave valor}
+    => la semilla será un map (no se definió aún, suponemos que luego la recibirá el reduce)
+
+  6. pensamos como son los elementos con los que operará el reduce, será algo del tipo [:clave valor]
+    => aplicamos el concepto de destructuring para separar las columnas del vector (caracteristica, valor)
+
+  7. llegamos al objetivo, tenemos la semilla y las columnas
+    => le asociamos un map de la forma {:clave valor} a la semilla que es un map, se repetirá con cada elemento
+
+  8. ya hicimos lo dificil, ahora sólo le pasamos al reduce la semilla (un map vacío)
+     y los elementos que recorrerá (deben ser de la forma con la que definimos que se operarán osea [:clave valor])
+
+  9. sólo queda pasarle al map la secuencia de elementos que recorrerá y le aplicará la función definida al principio
+  #+END_QUOTE
+
+  #+BEGIN_SRC clojure
+    (def personajes "assets/personajes-de-innsmouth.csv")
+    ;; (slurp personajes)
+
+    ;; sólo agregamos las keywords
+    (def personaje-caracteristicas [:nombre :raza :origen :tiempo-de-vida])
+
+    (defn str->int
+      [str]
+      (Integer. str))
+
+    ;; para definir el tipo de dato según su keyword, lo usamos en conjunto con (convertir)
+    (def personaje {:nombre identity
+                     :raza identity
+                     :origen identity
+                     :tiempo-de-vida str->int})
+
+    (defn caracteristica-personaje
+      [personaje-key valor]
+      ((get personaje personaje-key) valor))
+
+    ;; (personaje-caracteristica :tiempo-de-vida 5)
+
+    (defn lista-de-filas
+      "Devuelve una lista de filas de un CSV"
+      [csv-texto]
+      (map #(clojure.string/split % #",")
+           (clojure.string/split csv-texto #"\n")))
+
+    ;; (lista-de-filas (slurp personajes))
+
+    (defn personajes-map
+      [filas-pendientes]
+      (map (fn [fila-pendiente]
+             (reduce (fn [nueva-fila-transformada [caracteristica valor]]
+                       (assoc nueva-fila-transformada caracteristica (caracteristica-personaje caracteristica valor)))
+                     {}
+                     (map vector personaje-caracteristicas fila-pendiente)))
+           filas-pendientes))
+
+    ;; (first (personajes-map (lista-de-filas (slurp personajes))))
+
+    (defn personajes-humanos
+      [limite-edad lista-personajes]
+      (filter #(<= (:tiempo-de-vida %) limite-edad) lista-personajes))
+
+    ;; (personajes-humanos 60 (personajes-map (lista-de-filas (slurp personajes))))
+  #+END_SRC
+* Carrito de Compras
+  #+BEGIN_SRC clojure
+    (def tasa-descuento-jubilado 0.10)
+    (def tasa-descuento-premium 0.20)
+
+    (def galletas-chocolate {:nombre "galletas de chocolate"
+                             :categoria "galletas"
+                             :precio 50})
+
+    (def canasta-de-navidad [{:nombre "pan dulce" :categoria "panaderia" :precio 300 :precio-cuidado? true}
+                             {:nombre "turrón" :categoria "dulces" :precio 200 :precio-cuidado? true}
+                             {:nombre "sidra" :categoria "bebidas" :precio 500 :precio-cuidado? false}])
+
+    (def productos-precios-cuidados
+      (filter :precio-cuidado? canasta-de-navidad))
+
+    (defn detalle-producto [producto]
+      (let [{:keys [nombre precio descuento]} producto]
+        (str nombre " $" precio ", valor del descuento $" descuento)))
+
+    (defn nombre-productos []
+      (map :nombre canasta-de-navidad))
+
+    (defn aplicar-descuento [producto descuento]
+      (let [{:keys [precio]} producto]
+        (assoc producto :descuento (* precio descuento))))
+
+    (aplicar-descuento galletas-chocolate tasa-descuento-premium)
+
+    (def canasta-navidad-jubilados
+      (map (fn [producto] (aplicar-descuento producto tasa-descuento-jubilado))
+           canasta-de-navidad))
+  #+END_SRC
+* Contador de muletillas
+  #+BEGIN_SRC clojure
+    ;; usamos la estrategia bottom-up comenzamos desde lo específico hacia lo general
+    ;; 1. comenzamos desde lo específico el contar las palabras
+    ;; 2. luego con el contador de muletillas
+
+    ;; en la función anónima #() ocurre lo más importante
+    ;; 1. con el % (que es propia de la función anónima abreviada) obtenemos el valor asociado a la palabra
+    ;;
+    ;; 2. si no está entre las palabras repetidas la agregará a una estructura {} map vacía asociandole el valor nil,
+    ;; el % evaluará la palabra como una keyword que actúa como una función getter :hola :chaval según la palabra que analice
+    ;; por tanto el % devolverá nil por consiguiente el OR devolverá el 0 (en ese contexto el 0 es la única expresión que no es nil ni false)
+    ;; y luego inc lo incrementará evaluando 0+1
+    ;;
+    ;; 3. si está entre las palabras repetidas al evaluar % devolverá el número de veces que se repita y lo incrementará en 1,
+    ;; porque % se reemplaza por la keyword :hola :chaval que actúan como función getter
+    ;; y el OR devuelve el primer valor que sea distinto a nil ó falso
+    (defn contar-palabra [palabras-repetidas palabra]
+      (update-in palabras-repetidas [palabra] #(inc (or % 0))))
+
+    ;; 1. al reduce le pasamos la función que analizará cada palabra
+    ;;
+    ;; 2. el valor semilla será una estructura map vacía
+    ;; que sirve como acumulador (se agregan nuevas palabras)
+    ;; y sirve como un estado (contiene a cada palabra del texto, actualizar el estado sería aumentar las veces que se repiten las palabras)
+    ;;
+    ;; 3. por último pasamos una secuencia de palabras (no importa si es vector ó lista, porque las trata como una secuencia)
+    (defn contador-muletillas [texto]
+      (reduce contar-palabra {} (clojure.string/split texto #" ")))
+
+    (contador-muletillas "hola chaval como estas che che bien y vos?")
+  #+END_SRC
+* ToDo List
+  #+BEGIN_SRC clojure
+    (def app-state
+      {:lista-tareas lista-tareas
+       :selected nil
+       :editando? false})
+
+    (def lista-tareas [{:titulo "Cocinar torta" :done? false}
+                       {:titulo "Mirar TV" :done? false}
+                       {:titulo "Lavar la ropa" :done? false}
+                       {:titulo "Preparar la cena" :done? true}])
+
+    (defn crear-tarea [tarea]
+      (select-keys tarea [:titulo :done]))
+
+    (defn agregar-tarea [lista-tareas nueva-tarea]
+      (conj lista-tareas nueva-tarea))
+
+    (defn remover-tarea [lista-tareas numero-tarea]
+      (vec
+       (concat
+        (subvec lista-tareas 0 numero-tarea)
+        (subvec lista-tareas (inc numero-tarea)))))
+
+    (defn reemplazar-tarea [lista-tareas numero-tarea nueva-tarea]
+      (assoc lista-tareas numero-tarea (crear-tarea nueva-tarea)))
+  #+END_SRC

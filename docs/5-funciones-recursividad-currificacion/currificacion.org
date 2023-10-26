@@ -1,0 +1,246 @@
+#+TITLE: Currificación
+* Conceptos
+  #+BEGIN_QUOTE
+  Clojure por defecto no aplica *currificación*, pero podemos usar la función ~partial~ para lograr un comportamiento similar
+  #+END_QUOTE
+* Apply
+** Conceptos
+   - ~apply~ le pasa a una función (1º param) uno ó más parámetros de forma individual (suponiendo que esa función espera esos parámetros)
+
+   #+BEGIN_QUOTE
+   Supongamos que a una función le queremos pasar por parámetro los valores de una vector ó de una colección,
+   pero la función espera recibir parámetros de forma individual.. ~(funcion param1 param2)~
+   es decir no es de la forma ~(funcion lista-parametros)~
+
+   Entonces ~apply~ agarra cada uno de los elementos de un vector ó colección y se los pasa de forma individual
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplos Básicos
+**** Ejemplo 1 - Aplicar la función Max a un vector
+     #+BEGIN_SRC clojure
+       ;; max
+       ;; - espera uno ó mas parámetros (usa el concepto de número indefinido de parámetros, el rest parameter)
+       ;; - no espera recibir un vector con valores
+       (max 1 2 10)
+
+       ;; esto no funcionaría como se espera..
+       (max [1 2 10])
+
+       ;; - con apply, podemos aplicar el max en un vector
+       ;; - apply le pasa a la función los argumentos de forma individual
+       (apply max [1 2 10])
+       (apply max (list 1 2 10))
+
+       ;; solución alternativa, usamos la función (reduce)
+       (reduce max [1 2 10])
+       (reduce max (list 1 2 10))
+     #+END_SRC
+**** Ejemplo 2 - Aplicar funciones básicas
+     #+BEGIN_SRC clojure
+       (apply + '(1 2))
+       ;; es lo mismo que (+ 1 2)
+
+       (apply + [1 2 3 4])
+       (apply + 1 [2 3 4])
+       ;; es lo mismo que (+ 1 2 3 4)
+       ;; pero NO podriamos hacer los siguiente.. (+ [1 2 3 4])
+
+       ;; solución alternativa, usamos la función (reduce)
+       (reduce + [1 2 3 4])
+       (reduce + 1 [2 3 4])
+
+       (apply str ["a" "b" "c"])
+       (apply str "a" ["b" "c"])
+       ;; es lo mismo que (str "a" "b" "c")
+     #+END_SRC
+*** Ejemplos Interesantes
+**** Ejemplo 1
+     #+BEGIN_SRC clojure
+       (conj [0] 1 2 3)
+       (into [0] [1 2 3])
+
+       ;; - into inserta en una estructura (1º param) los elementos de otra estructura (2º param)
+       ;; - conj inserta en una estructura (1º param) uno ó mas valores individuales (2º3º..nº parámetro, rest parameter)
+       ;; - apply le pasa a una función (1º param) uno ó más parámetros de forma individual (suponiendo que esa función espera esos parámetros)
+       ;;
+       ;; con apply aplicamos la función conj a los siguientes parámetros que conj esperaría
+       (defn my-into
+         [estructura-destino elementos-estructura-origen]
+         (apply conj estructura-destino elementos-estructura-origen))
+
+       (my-into [0] [1 2 3])
+     #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://clojuredocs.org/clojure.core/apply][apply - clojure.core (clojuredocs.org)]]
+* Partial
+** Conceptos
+   - la sintáxis es de la forma ~(partial funcion param1 param2 & resto-parametros)~
+   - ~partial~ devuelve una función ~fn~ que espera uno o más parámetros
+     1) estos parámetros se pasarán a la función que le habiamos pasamos a ~partial~
+     2) ~& resto-parametros~ aplica el concepto de *parameter rest* que requiere anteponer el símbolo ~&~
+** Ejemplos
+*** Ejemplos Básicos
+**** Ejemplo Elemental antes de usar partial
+     #+BEGIN_SRC clojure
+       ;; definimos una función nombrada que suma dos valores
+       (defn add [x y]
+         (+ x y))
+
+       ;; es posible invocar/llamar a la variable add5, porque ésta devuelve una función
+       (add5 10)
+
+       ;; alternativas a la primera función nombrada
+       ;; - bindeamos/vinculamos a add5 una función anónima (también podriamos decir que nombramos a la función anónima)
+       (def add*
+         (fn [x y] (+ x y)))
+
+       ;; usamos una función anónima usando la macro #()
+       (def add** #(+ %1 %2))
+
+       (add 2 3)
+       (add* 2 3)
+       (add** 2 3)
+     #+END_SRC
+**** Ejemplo 1
+     #+BEGIN_SRC clojure
+       ;; definimos una función nombrada que suma dos valores
+       (defn add [x y]
+         (+ x y))
+
+       ;; definimos una variable que devuelve una función similar a (fn [y] (add 5 y))
+       ;; la función que devuelve sólo espera 1 parámetro
+       (def add5
+         (partial add 5))
+
+       ;; es posible invocar/llamar a la variable add5, porque ésta devuelve una función
+       (add5 10)
+     #+END_SRC
+**** Ejemplo 2
+     #+BEGIN_SRC clojure
+       ;; - add10 devuelve una función "casi" como (fn [x] (+ x 10))
+       ;; decimos "casi" porque espera uno ó mas parámetros ó ningun parámetro
+       ;; - en este ejemplo la idea es pasarle sólo un parámetro, lo importante es que devuelve una función y espera recibir parámetros
+       (def add10 (partial + 10))
+       (add10 5)
+     #+END_SRC
+**** Ejemplo 3 - Agrupar palabras - con la función conj
+     #+BEGIN_SRC clojure
+       (def agregar-palabras-claves
+         (partial conj ["articulo" "blog"]))
+
+       (agregar-palabras-claves "noticias" "programación" "it")
+
+       ;; a modo recordatorio de como usar conj
+       (conj [] 1 2 3)
+     #+END_SRC
+*** Ejemplos Interesantes
+**** Ejemplo 1 - Implementando la función partial
+     #+BEGIN_SRC clojure
+       (defn my-partial
+         "Recibe una función seguido de uno ó más parámetros (parameter rest) y devuelve una función anónima,
+         la función anónima recibe uno o más paraḿetros (parameter rest) y se los pasa a la primera función"
+         [funcion-parcial & parametros]
+         (fn [& parametros-adicionales]
+           (apply funcion-parcial (into parametros parametros-adicionales))))
+
+       (def add10 (my-partial + 10))
+       (add10 5)
+
+       (comment "
+       (def add10 (partial + 10))
+       (add10 5)
+
+       (apply max [1 2 3 4])
+       ")
+     #+END_SRC
+**** Ejemplo 2 - Logger que evita funciones con lógica repetida
+     #+BEGIN_SRC clojure
+       (defn now[] (new java.util.Date))
+
+       (defn logger
+         [log-level mensaje]
+           (condp = log-level
+             :warning (str (now) " warning: " mensaje)
+             :error (clojure.string/upper-case(str (now) " error: " mensaje "!!"))))
+
+       (def warning (partial logger :warning))
+       (def error (partial logger :error))
+
+       (warning "queda poco combustible en el avión")
+       (error "los motores del avión no responden")
+     #+END_SRC
+** TODO Referencias
+  #+BEGIN_COMMENT
+  Seguir desarrollando usando como base estas referencias
+  #+END_COMMENT
+*** Referencias Extraoficiales
+    1. [[http://xahlee.info/clojure/clojure_function_currying.html][Clojure Partial Function, Currying (xahlee.info)]]
+    2. [[https://practical.li/clojure/thinking-functionally/partial-functions.html][Currying & Partial Functions (practical.li)]]
+* Complemento
+** Conceptos
+   #+BEGIN_QUOTE
+   Conceptualmente el complemento de algo es su negación,
+   si bien ya puede existir una función que lo haga podríamos implementarla
+
+   Ojo que el complemento no es solo usar aplicar la función ~(not)~ en una función booleana,
+   porque si la función dónde se aplica recibe varios parámetros..
+   1. primero debemos pasarle los parámetros
+   2. y luego ya podemos negar su valor booleano
+   #+END_QUOTE
+** Ejemplo
+   #+BEGIN_SRC clojure
+     (def proyectos-militares-database
+       {0 {:titulo "Proyecto X" :tiene-clave false :publicado true}
+        1 {:titulo "Proyecto robot humanoide" :tiene-clave true :publicado false}
+        2 {:titulo "Proyecto ataque extraterrestre" :tiene-clave true :publicado false}
+        3 {:titulo "Proyecto demonios entre nostros" :tiene-clave true :publicado false}
+        4 {:titulo "Proyecto mutantes entre nosotros" :tiene-clave false :publicado true}})
+
+     ;; si vemos en detalle la función anónima sólo recibe el parameter rest (lista con un numero indefinido de parámetros)
+     ;; y luego apply le pasa la lista de parámetros (parameter rest) de forma individual
+     (defn complemento
+       "Recibe una función que devuelva un valor booleano y niega el valor"
+       [funcion]
+       (fn [& parametros]
+         (not (apply funcion parametros))))
+
+     (comment "
+     como recordatorio de en que casos sirve apply
+     (max 1 2 3)
+     (apply max [1 2 3])
+     ")
+
+     (comment "
+     no podemos hacer algo como lo siguiente.. porque (vulnerable?) espera recibir un parámetro..
+     (def no-vulnerable? (not (vulnerable?)))
+     ")
+
+     (defn proyecto-detalle
+       [codigo-proyecto]
+       (get proyectos-militares-database codigo-proyecto))
+
+     ;; (proyecto-detalle 1)
+
+     (defn vulnerable?
+       [registro]
+       (and (:publicado registro)
+            (not (:tiene-clave registro))
+            registro))
+
+     (def no-vulnerable? (complemento vulnerable?))
+
+     (defn proyectos-vulnerables
+       [codigos-proyectos]
+       (filter vulnerable?
+               (map proyecto-detalle codigos-proyectos)))
+
+     (defn proyectos-no-vulnerables
+       [codigos-proyectos]
+       (filter no-vulnerable?
+               (map proyecto-detalle codigos-proyectos)))
+
+     (proyectos-vulnerables (range 0 5))
+     (proyectos-no-vulnerables (range 0 5))
+   #+END_SRC
+

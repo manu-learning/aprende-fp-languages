@@ -1,0 +1,360 @@
+#+TITLE: Funciones
+* Parametros formales
+** Conceptos
+   - Se mencionan a los *parametros formales* cuando se trata de explicar el *modelo de evaluación* de expresiones cuando se invoca una función
+   - Son los parámetros de la definición de una función, que son sustituidos por los valores pasados en la invocación de la función previo a evaluarla
+
+   #+BEGIN_QUOTE
+   Una posible interpretación sería
+   1. definimos una función (/los parametros que recibe la función, se llaman parámetros formales/)
+   2. invocamos la función (/los parametros formales se sustituyen por los valores pasados en la invocación a la función/)
+   3. se evalúa el cuerpo de la función (/se evalúa el cuerpo de la función con los parámetros sustituidos/)
+   4. se obtiene el resultado de evaluar el cuerpo de la función
+   #+END_QUOTE
+** Referencias
+*** Referencias Extraoficiales
+    1. [[https://domingogallardo.github.io/apuntes-lpp/teoria/tema02-programacion-funcional/tema02-programacion-funcional.html][Programación funcional (domingogallardo.github.io)]]
+    2. [[https://www.geeksforgeeks.org/difference-between-actual-and-formal-parameters-in-pl-sql/][Difference between Actual and Formal Parameteres in PL/SQL (geeksforgeeks.org)]]
+    3. [[https://medium.com/@dpthegrey/explain-difference-between-formal-and-actual-parameter-with-example-26f63e7560bb][Explain difference between formal and actual parameter (by dpthegrey, Medium)]]
+* TODO Efecto de Lado (Side effect)
+** Concepto
+   - Cualquier función que devuelva el valor ~nil~ provoca *efecto de lado*
+     (Ej. la función ~println~ genera efecto de lado en el STDOUT)
+** Referencias
+*** Referencias Extraoficiales
+    1. [[https://practical.li/clojure/thinking-functionally/side-effects.html][Side effects (practical.li)]]
+    2. [[http://makble.com/clojure-looping-and-side-effects-and-correct-way-to-use-for-loop][Clojure looping and side effects (makble.com)]]
+    3. [[https://danlebrero.com/2017/06/21/atoms-delays-and-side-effects-resource-managent-in-clojure/][Atoms, dealys and side effects (danlebrero.com)]]
+    4. [[https://wiki.uqbar.org/wiki/articles/transparencia-referencial--efecto-de-lado-y-asignacion-destructiva.html][Transparencia referencial, efecto de lado y asignación destructiva (wiki.uqbar.org)]]
+*** Referencias de Issues
+    1. [[https://stackoverflow.com/questions/47562045/how-is-the-function-println-not-pure-clojure][How is the function println not pure? (stackoverflow.com)]]
+* Llamadas a Funciones
+  #+BEGIN_SRC clojure
+    ;; inc
+    ;; - incrementa en 1 cualquier valor numérico
+    (inc 1.2)
+
+    ;; map
+    ;; - aplica una función a cada elemento de una lista
+    ;; - devuelve una nueva lista (concepto de inmutabilidad)
+    (map inc [0 1 2 3])
+  #+END_SRC
+* Definir funciones
+** Conceptos
+   - 1º parámetro: nombre de la función
+   - 2º parámetro: Docstring (es opcional) para describir la función
+   - 3º parámetro: los argumentos que recibe, delimitados por corchetes
+   - 4º parámetro: el cuerpo de la función
+** Ejemplo
+  #+BEGIN_SRC clojure
+    ;; defn
+    (defn comentar-frase-animosa
+      "Devolverá una frase célebre de Jean-Luc Picard"
+      [nombre]
+      (str "Mi amigo " nombre ", es posible no cometer errores y aún así perder."
+           "Eso no es debilidad, es vida.!"))
+
+    ;; llamada a la función
+    (comentar-frase-animosa "Manu")
+  #+END_SRC
+* Documentar
+** Conceptos
+   - La función ~doc~ imprime la documentación de una función
+   - Se debe ejecutar en el *REPL*
+** Ejemplo
+   #+BEGIN_SRC clojure
+     ;; - imprime en el REPL la documentación de la función "comentar-frase-animosa"
+     (doc comentar-frase-animosa)
+   #+END_SRC
+* Aridad de una función
+** Conceptos
+   - La *aridad* es la cantidad de *argumentos* que toma una función
+   - Una función podría tener *aridad=0* si no recibiera parámetros
+** Ejemplo Basicos
+*** Ejemplo 1
+   #+BEGIN_SRC clojure
+     ;; función de aridad-0
+     (defn saludo-anonimo
+       []
+       "Hola..!")
+
+     ;; función de aridad-1
+     (defn saludar-por-nombre
+       [nombre]
+       (str "Hola " nombre "!"))
+
+     ;; función de aridad-2
+     (defn saludar-por-nombre-completo
+       [nombre apellido]
+       (str "Hola " nombre " " apellido "!"))
+   #+END_SRC
+* Sobrecarga de aridad (Overloading)
+** Conceptos
+** Ejemplos Basicos
+*** Ejemplo 1
+    #+BEGIN_SRC clojure
+      (defn funcion-aridad-0 []
+        (println "Esta función tiene aridad 0"))
+
+      (defn funcion-aridad-1 [a]
+        (println "Esta función tiene aridad 1"))
+
+      (defn funcion-multiples-aridades
+        ([a]
+         (println "se invocó a la función con aridad-1"))
+        ([a b]
+         (println "se invocó a la función con aridad-2"))
+        ([a b c]
+         (println "se invocó a la función con aridad-3")))
+    #+END_SRC
+*** Ejemplo 2 - Comportamiento por default con sobrecarga de aridad
+    #+BEGIN_SRC clojure
+      (def carrito-de-compras [])
+
+      ;; aridad-3: el comportamiento normal, agregar al carrito el codigo del producto y la cantidad comprada
+      ;; aridad-2: definimos comportamiento por defecto, una cantidad mínima a comprar (si no la agregan)
+      (defn agregar-producto-al-carrito
+        ([carrito codigo cantidad]
+         (conj carrito {:codigo codigo
+                        :cantidad cantidad}))
+        ([carrito codigo]
+         (agregar-producto-al-carrito carrito codigo 1)))
+
+
+      (agregar-producto-al-carrito
+       carrito-de-compras
+       101
+       5)
+    #+END_SRC
+*** Ejemplo 3
+  #+BEGIN_SRC clojure
+    ;; función con sobrecarga de aridad
+    (defn atacar
+      "Realiza la acción de atacar a un enemigo"
+      ;; aridad-0
+      ([]
+       "Oh no, no puedo pelear si no me dices tu nombre..")
+      ;; aridad-1
+      ([nombre-enemigo]
+       (str "Atacando a " nombre-enemigo " con patada voladora"))
+      ;; aridad-2
+      ([nombre-enemigo tipo-ataque]
+       (str "Atacando a " nombre-enemigo " con un " tipo-ataque)))
+
+    ;; Comportamiento por default, si no nos pasan un parámetro
+    (defn saludar-aliado
+      ([nombre pais]
+       (str "Hola " nombre ", en dónde queda " pais "?"))
+      ;; ej. si no nos pasa el 2º argumento, le damos un comportamiento por defecto
+      ([nombre]
+       (str "Hola " nombre ", seguro eres de un país exótico...")))
+
+    (defn saludar-enemigo
+      "Saluda al enemigo antes de la gran batalla"
+      ;; aridad-3
+      ([nombre pais habilidad-secreta]
+       (if (= habilidad-secreta "invisibilidad")
+         (str "Hola " nombre " no peleo con personas invisibles..")
+         (str "Hola " nombre " asi que eres de " pais ".. Wow tu habilidad es " habilidad-secreta)))
+      ;; aridad-2
+      ([nombre pais]
+       (str "Hola " nombre " asi que sos de " pais ", que emocionante!"))
+      ;; aridad-1
+      ([nombre]
+       (str "Hola " nombre " tu eres mi enemigo!")))
+  #+END_SRC
+** Ejemplos
+* Funciones con Pre-condición y Post-condición
+** Conceptos
+   - La pre-condición y post-condición se definen en una *estructura map* y reciben un vector de *predicados* (funciones lógicas, funciones booleanas)
+   - Si no se cumple la pre-condición ó la post-condición, entonces Clojure *lanza una excepción*
+
+   #+BEGIN_QUOTE
+   You should also be careful with pre/post conditions as *they throw AssertionError’s when triggered*.
+   This has two implications:
+
+   1. *Assertions can be disabled in Java* with a special JVM flag, making your pre/postconditions silently ignored.
+   2. *AssertionError is a sublcass of Error*
+      - So *it won’t be caught by generic (catch Exception) handlers* people usually use, you have to catch Throwable then.
+      - This might lead to errors leaking through catch-all cracks in your program.
+   #+END_QUOTE
+** Pre-Condición
+   - Se representa con la keyword ~:pre~ seguido de un vector de predicados
+** Post-Condición
+   - Se representa con la keyword ~:post~ seguido de un vector de predicados
+   - Con el símbolo ~%~ obtenemos el resultado que devolvería la función para condicionarlo
+** Ejemplos
+   #+BEGIN_SRC clojure
+     ;; pre-condición:
+     ;; - tiene sólo una, el denominador distinto de cero
+     ;;
+     ;; post-condición:
+     ;; - el resultado debe ser distinto de cero (con la función pos?)
+     ;; - el resultado debe ser menor ó igual a 1
+     (defn ratio [numerador denominador]
+       {:pre [(not= 0 denominador)]
+        :post [(pos? %) (<= % 1)]}
+       (/ numerador denominador))
+
+     (ratio 1 2)
+   #+END_SRC
+** Referencias
+*** Referencias Oficiales
+    1. [[https://clojure.org/reference/special_forms][Special forms (clojure.org)]]
+*** Referencias Extraoficiales
+    1. [[https://blog.fogus.me/2009/12/21/clojures-pre-and-post/][Clojure's :pre and :post (blog.fogus.me)]]
+*** Issues
+    1. [[https://clojureverse.org/t/why-are-pre-and-post-conditions-not-used-more-often/2238][Why are pre and post conditions not used more often? (clojureverse.org)]]
+* Funciones Variádicas (Rest parameter)
+** Conceptos
+  - Las *funciones variádicas* reciben un número indefinido de argumentos
+  - El *rest parameter* se indica con el símbolo ~&~ seguido del nombre que tendrá la lista indefinida de parámetros
+** Ejemplos
+*** Ejemplo 1
+   #+BEGIN_SRC clojure
+     ;; - es una función variádica porque al usar el & indíca que tiene el "rest parameter"
+     ;; - libros es el nombre de éste "rest parameter" y debe ir al final
+     (defn sugerir-libros-favoritos
+       "Recibe el nombre del tripulante y el nombre de los libros a sugerir"
+       [nombre & libros]
+       (str "Hola tripulante " nombre "! hoy te sugiremos los siguientes libros: "
+            (clojure.string/join ", " libros)))
+
+     (sugerir-libros-favoritos "Picard" "A games of Thrones" "Crice" "American Gods")
+   #+END_SRC
+*** Ejemplo 2
+   #+BEGIN_SRC clojure
+     (defn atacar
+       "Recibe el nombre del enemigo a atacar"
+       [nombre]
+       (str "Atacando ferozmente a " nombre "..!"))
+
+     (defn atacar-multiples-enemigos
+       "Recibe el nombre de los enemigos a atacar"
+       [hora & enemigos]
+       (if (> hora 12)
+         "A esa hora dormimos..!"
+         (do
+           ;; expresión
+           (println "Ups..! estamos apurados! atacaremos ahora! ")
+           ;; otra expresión
+           (map atacar enemigos)
+           ))
+       )
+
+     (atacar-multiples-enemigos 10 "Thor" "Iron Man" "Hulk" "Avispa")
+   #+END_SRC
+* Cuerpo de la función (function Body)
+** Conceptos
+   - El cuerpo de una función es también una función y devuelve la última expresión evaluada
+** Ejemplos Basicos
+*** Ejemplo 1 - Operaciones al azar
+    #+BEGIN_SRC clojure
+     ;; clojure evaluará cada expresión de ésta función (barrido de izquierda a derecha)
+     ;; devolviendo el string "pucha" por ser la última expresión evaluada
+     (defn funcion-sin-utilidad
+       []
+       (+ 1 1)
+       30
+       (* 2 2)
+       5
+       "pucha")
+
+     (funcion-sin-utilidad)
+    #+END_SRC
+*** Ejemplo 2 - expresión if
+    #+BEGIN_SRC clojure
+      ;; el ejemplo más común es la expresión if
+      ;; 1. si la condición es verdadera, la última expresión evaluada será la rama del if
+      ;; 2. si la condición es falsa, la última expresión evaluada será la rama del else
+      ;;
+      ;; en clojure no aparece la palabra else, la sintáxis es de la forma: (if (exp) rama-if rama-else)
+      (defn solicitar-ingreso
+        [nombre edad]
+        (if (> edad 18)
+          (str nombre " bienvenido al gran hotel.!")
+          "No tenes la edad requerida para ingresar! >:("))
+
+      (solicitar-ingreso "Jean-Luc Picard" 50)
+
+      (solicitar-ingreso "Wesley Crusher" 16)
+    #+END_SRC
+* Funciones Anónimas
+** Conceptos
+   - Se crean similar que con ~defn~ pero usamos ~fn~ y no las nombramos
+   - La forma corta de usarlas es usando ~#~ como prefijo y ~%~ para los parámetros
+** Ejemplos Basicos
+*** Ejemplo 1 - Básico
+   #+BEGIN_SRC clojure
+     ;; la estructura de una función anónima es similar que definir una función nombrada con defn
+     (fn []
+       "mi primer función anónima")
+
+     ;; 1. el map recibe un vector con 3 nombres
+     ;; 2. el map aplica la función anónima a cada nombre
+     ;; 3. la función anónima recibe el nombre y lo saluda
+     (map (fn [nombre] (str "Hola " nombre))
+          ["Pinocchio" "Geppeto" "Gingerbread Man"])
+
+     ;; - función anónima que recibe un parámetro y devuelve el doble
+     ;; - invocamos a la función anónima y le pasamos el valor 8 como parámetro
+     ((fn [x] (* x 2)) 8)
+   #+END_SRC
+*** Ejemplo 2 - Nombrar a una función anónima
+    #+BEGIN_SRC clojure
+      ;; tres formas de explicar lo mismo acerca de la siguiente función anónima
+      ;; - bindeamos/vinculamos un nombre a la función anónima
+      ;; - definimos una variable y le bindeamos/vinculamos una función anónima que espera un argumento
+      ;; - la variable devuelve una función anónima que espera un argumento
+      ;; (lo común sería usar def para variables y defn para funciones)
+      (def el-doble
+        (fn [x] (* x 2)))
+
+      (el-doble 2)
+
+      ;; defn
+      ;; - es más fácil de nombrar una función (comparado con def)
+      (defn el-triple [x]
+        (* x 3))
+
+      (el-triple 2)
+    #+END_SRC
+*** Ejemplo 3 - Forma corta de una función anónima
+    #+BEGIN_SRC clojure
+      ;; - forma corta de escribir una función anónima
+      ;; - * es la función que aplica
+      ;; - % es el parámetro que recibe
+      #(* % 2)
+
+      ;; la función anónima anterior de la forma sin acortar sería
+      (fn [x] (* x 2))
+
+      ;; invocamos la misma función anónima, que recibe sólo 1 parámetro
+      ;; 1. le pasamos el valor 4 de argumento
+      ;; 2. devuelve el doble del valor
+      (#(* % 2) 4)
+
+      ;; la llamada anterior con la función anónima sin acortar sería
+      ((fn [x] (* x 2)) 4)
+
+      ;; - str es la función que aplica la función anónima
+      ;; - % es el parámetro que recibe la función anónima
+      (map #(str "Hola " %)
+           ["Pinocchio" "Geppeto" "Gingerbread Man"])
+
+      ;; idem casos anteriores
+      (map (fn [nombre] (str "Hola " nombre))
+           ["Pinocchio" "Geppeto" "Gingerbread Man"])
+    #+END_SRC
+*** Ejemplo 4 - Forma corta de una función anónima con multiples parámetros
+    #+BEGIN_SRC clojure
+      ;; % es lo mismo que %1
+      ;; %1 recibe el primer parámetro
+      ;; %2 recibe el segundo parámetro y asi..
+      (#(* 2 %1) 4)
+
+      ;; otro ejemplo
+      (map #(str % " busca pareja..") ["Fiona" "Shrek"])
+
+      (#(str %1 " corazoncito " %2) "Fiona" "Shrek")
+    #+END_SRC
