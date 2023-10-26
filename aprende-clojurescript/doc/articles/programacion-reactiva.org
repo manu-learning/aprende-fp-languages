@@ -1,0 +1,276 @@
+* Programación Reactiva                       :reactive_programming:rp:frp:
+   :PROPERTIES:
+   :DATE-CREATED: <2023-10-16 Mon>
+   :DATE-UPDATED: <2023-10-16 Mon>
+   :BOOK: nil
+   :BOOK-CHAPTERS: nil
+   :COURSE: nil
+   :COURSE-LESSONS: nil
+   :END:
+** Sistemas Reactivos
+*** Conceptos
+   - Utilizar *programación reactiva* no implíca que el sistema sea reactivo
+   - Las cualidades de diseño que los caracterizan son
+     1) Más flexibles
+     2) Bajo acoplamiento
+     3) Más tolerantes a fallos
+     4) Más escalables
+     5) Altamente responsivos
+*** Cualidades de Diseño
+**** Responsivos
+    - Los problemas son detectados de forma rápida y manejados de forma eficiente
+    - Proveen *tiempos de respuesta* rápidos y consistentes
+**** Resilientes
+    - Permanecen *responsivos* ante cualquier fallo (/si ante el primer fallo deja de ser responsivo, entonces no cumple con ser resiliente/)
+    - Los fallos (failure) son manejados dentro de cada *componente* y tratandolos de forma *aislada* (isolation) para no afectar al resto del sistema
+**** Elásticos
+    - Permanecen *responsivos* ante cambios en la *carga de trabajo* (cantidad de peticiones/request al sistema)
+    - Reducen/Incrementan los recursos para manejar la *carga de trabajo*
+    - Capacidad para *replicar ó dividir componentes* para *distribuir las peticiones* entre ellos
+**** Orientados a Mensajes
+    - El *intercambio de mensajes* entre los componentes es *Asíncrono* (comunicación NO-bloqueante)
+      1) asegura bajo acoplamiento
+      2) asegura aislamiento
+    - La *comunicación NO-Bloqueante*
+      - permite a los destinatarios *consumir recursos sólo cuando están activos*
+      - reduce la sobrecarga en el sistema
+
+    #+BEGIN_QUOTE
+    Un ejemplo de *comunicación NO-Bloqueante* y
+    haciendo referencia a *permite los destinatarios consumir recursos sólo cuando están activos*
+
+    En el contexto de  una aplicación de mensajería en el celular
+    1) una persona ~X~ envía mensajes a otra persona ~Y~
+    2) el destinatario ~Y~ quien recibe los mensajes
+       1) no tiene el celular encendido (no esta activo)
+       2) luego enciende el celular, abre la aplicación de mensajería (está activo) entonces es notificado de los mensajes
+    #+END_QUOTE
+*** Referencias
+**** Referencias Oficiales
+    1. [[https://www.reactivemanifesto.org/es][Manifiesto de Sistemas Reactivos (reactivemanifesto.org)]]
+    2. [[https://www.reactivemanifesto.org/glossary#Failure][Glosario de Manifiesto de Sistemas Reactivos (reactivemanifesto.org)]]
+** Conceptos
+   - Un programa reactivo *reacciona a cada cambio*
+   - La *programación reactiva* se basa en
+     1) utilización de (Data Stream) *flujos de datos asíncronos* (es lo mismo que Event Stream)
+     2) reaccionar a los (Data Stream) que implica una *propagación de cambios*
+   - Utiliza el *patrón de diseño Observer* por cuestiones de *eficiencia*
+** (Data Stream) Flujos de Datos asíncronos
+*** Conceptos
+   - son una *secuencia de datos* que son *emitidos a través del tiempo* (/se emiten valores de forma secuencial, uno por uno/)
+   - otra interpretación sería son un *tipo de colección* pero contienen a *eventos* que ocurren en algún momento en el tiempo
+   - Los datos emitidos pueden ocurrir por
+     1) *eventos* (/Ej. eventos del DOM como eventos del mouse, eventos del teclado, .../)
+     2) ó *cambios de estado* (/Ej. se transformó una colección, se transformó una entrada de una estructura asociativa map/)
+
+   #+BEGIN_QUOTE
+    Ejemplos de (Data Stream) Flujos de Datos (ó también llamados Event Stream) serían
+    - un evento que emita cada número de una *Colección de números* (lista, array ó set)
+    - un evento que emita cada elemento de una *Colección de estructuras de datos* (lista, array ó set)
+    - un evento ~complete()~ que emite confirmación que no hay más valores en el *Flujo de datos*
+    - un evento ~error()~ que emite un error, propagandose e impidiendo que sigan ejecutando los eventos siguientes
+    - el evento ~click~ en el DOM que emita confirmación del click
+    - otro evento ~click~ que emita las coordenadas X, Y del mouse (emitiría una por vez)
+    - otro evento ~keyup~ que emita el valor ascci de la tecla presionada
+   #+END_QUOTE
+*** Ejemplos
+**** Ejemplo 1 - Valor de una variable dependiente del valor otras dos variables
+     #+BEGIN_QUOTE
+     Si declaramos en algún lenguaje cualquiera la expresión ~Z = X + Y~
+     - el valor de ~Z~ está atado/vinculado/depende de ~X~ y ~Y~
+     - aún no conocemos el valor de ~X~ ni ~Y~ no interesa por el momento
+
+     Entonces
+     1) definimos a ~Z~ como Observador y a ~X~ e ~Y~ como Sujetos Observables
+     2) hacemos que ~Z~ se Suscriba a los cambios de estado de los sujetos ~X~ e ~Y~ (ó también podriamos suscribirnos al cambio de la operación ~X+Y~)
+     3) ~Z~ no espera recibir una respuesta inmediata del valor de los sujetos que son observados ~X~ ó ~Y~ (operación asíncrona)
+     4) cuando ~X~ ó ~Y~ cambien su valor (estado), le notificarán (evento) emitiendo un valor a ~Z~
+     5) entonces ~Z~ reaccionará realizando la operación arimética ~X + Y~
+     #+END_QUOTE
+**** Ejemplo 1 Elemental previo al Ejemplo 2 - Operación síncrona Vs asíncrona en JavaScript
+     #+BEGIN_SRC javascript
+       // operaciones síncronas, se ejecutan en secuencia (una seguida de la otra, ...)
+       console.log(1);
+       console.log(2);
+       console.log(3);
+
+       // la segunda operación es asíncrona (se ejecutará pasado los 2 segundos)
+       console.log(1);
+       setTimeOut(() => {
+           console.log(2);
+       }, 2000)
+       console.log(3);
+     #+END_SRC
+**** Ejemplo 2 Elemental previo al Ejemplo 2- Operaciones sobre un Array
+     #+BEGIN_SRC js :results output
+       const valores = ['1', '2', 'foo', '3', '4'];
+
+       let resultado = valores
+           .map(x => parseInt(x))
+           .filter(x => !isNaN(x))
+           .reduce((semilla, siguiente) => semilla + siguiente);
+
+       console.log(resultado);
+     #+END_SRC
+
+     #+RESULTS:
+     : 10
+**** Ejemplo 2 - Operaciones sobre un Event Stream con RxJS (Rx, ReactiveX)
+     #+BEGIN_SRC javascript
+       import {interval, take, map, filter, reduce, pipe, from} from "rxjs"
+
+       const unStream = from(['1','2','foo','3','4']);
+
+       unStream
+           .subscribe(x => console.log('valor emitido por el observable', x));
+
+       unStream
+           .pipe(map(x => parseInt(x)),
+                 filter(x => !isNaN(x)))
+           .subscribe(x => console.log('entero emitido por el observable', x));
+
+       // podemos tomar valores de un array
+       const unArray = [1,2,3,4,5,6];
+
+       interval(1000)
+           .pipe(
+               take(5),
+               filter(x => x < 5),
+               map( x => unArray[x]))
+           .subscribe(x => console.log('valor obtenido de un array luego de un segundo', x));
+     #+END_SRC
+*** Referencias
+**** Referencias Oficiales
+     1. [[https://developer.mozilla.org/es/docs/Learn/JavaScript/Asynchronous/Introducing][Intro a JavaScript asíncrono (developer.mozilla.org)]]
+     2. [[https://es.redux.js.org/docs/avanzado/acciones-asincronas.html][Acciones asincrónicas (redux.js.org)]]
+**** Referencias Extraoficiales
+     1. [[https://lemoncode.net/lemoncode-blog/2018/1/29/javascript-asincrono][Javascript asíncrono (lemoncode.net)]]
+     2. [[https://medium.com/laboratoria-how-to/programacion-asincrona-cea3bad7c3c6][Programación asíncrona (medium.com/laboratoria-how-to)]]
+** Propagación de Cambios
+*** Conceptos
+    #+BEGIN_QUOTE
+    1) Si el valor de un elemento ~A~ depende del valor de otros elementos ~B~, ~C~, .. (Ej. una operación arimética)
+    2) luego el valor de alguno de elementos de los que depende ~A~ cambia
+    3) entonces ~A~ como depende de ellos, reaccióna y cambia su valor *propagandose el cambio en el sistema*
+    #+END_QUOTE
+*** Ejemplo 1
+    #+BEGIN_QUOTE
+    El ejemplo más común para entender la *propagación de cambios*, en el contexto de una hoja de cálculo
+    1) Tenemos tres celdas ~A~ ~B~ y ~C~, las dos primeras pondremos valores numéricos
+    2) La celda ~C~ tiene el resultado de sumar las celdas ~A~ y ~B~
+    3) Cuando alguna de las celdas ~A~ ó ~B~ cambie su valor, entonces
+       1) la celda ~C~ *reacciona* y cambia su valor
+       2) *propagandose los cambios* en el sistema
+
+    Aplicado al *paradigma funcional* podemos separar la lógica anterior en
+    - funciones puras (la que tiene la operación arimética)
+    - funciones impuras (la que realiza operaciones side-effect, Ej. cambiar el estado del sistema para que aparezca el resultado de la operación arimética)
+    #+END_QUOTE
+*** Ejemplo 2
+    #+BEGIN_SRC javascript
+      // la siguiente implementación NO es reactiva
+      let a = 1;
+      let b = 5;
+      let c = a + b;
+      a = 5;
+
+      // si la implementación fuera reactiva
+      // - el resultado sería a (5) + b (5) = 10
+      // - "c" dependería de la relación entre "a" y "b",
+      // cualquier cambio en alguno (a ó b) se reflejaría en "c" (éste reaccionaria al cambio y se propagarían los cambios en el sistema)
+      console.log(c);
+    #+END_SRC
+** Relación con el Patrón Observer
+*** Sujeto Observable (ó productor de streams y Notificador)
+    - genera el (data stream) *flujo de datos*
+      (/Ej. una colección de números, una colección de estructuras de datos, un evento del DOM como el click, ../)
+    - tienen un comportamiento *lazy*, NO comienzan a *emitir valores* hasta que nos suscribamos
+    - emiten valores (del data stream) de forma secuencial "uno por uno"
+      (/Ej. cada elemento de una colección, cada valor uno por uno de un evento como las coordenadas X e Y del cursor del mouse, .../)
+    - sólo notifica a quienes que se suscriban
+*** Observadores/Suscriptores (ó consumidor de streams)
+    - se *suscribe* (operación) al *Observable* para recibir el (data stream) de *forma asíncrona*
+      - NO pretende recibir el (data stream) flujo de datos de forma inmediata
+      - pretende recibir cada valor del (stream) flujo de datos cuando esté disponible y se lo notifique el Sujeto Observable al que se suscribió
+    - cuando recibe un valor del (data stream) *reacciona* con una *secuencia de eventos*
+*** Operación Update (actualizar)
+    - se ejecuta cuando el *Sujeto Observable* emite un nuevo valor
+    - actualiza el *estado interno* del *Observador*
+    - se llama como ~next()~ en la implementación de *ReactiveX*
+*** Operación Complete (implementación de ReactiveX)
+    - se ejecuta cuando el *Sujeto Observable* no tiene más datos disponibles
+*** Operación Error (implementación de ReactiveX)
+    - se ejecuta cuando se produce un error en el *Sujeto Observable*
+** Relación con la Programación Dirigida por Eventos
+*** Conceptos
+   - Un *evento* puede ser usado como *entrada* (input) de otro *evento*
+     (/útil para el paradigma funcional y aplicar composición de funciones/)
+   - Un *evento* es una *lista de ocurrencias ordenadas* y *emiten un valor*
+     (/Ej. hizo click, hizo otro click, movió el cursor, movió de nuevo el cursor/)
+   - Capturamos los eventos de forma *Asíncrona*
+     - NO pretendemos recibir la notificación del evento en el momento
+     - pretendemos recibir la notificación del evento cuando ocurra
+*** Sujeto Observable (Generador de streams y Notificador)
+   - es el *evento* de interés, el que se quiere observar
+     (/Ej. el click, el movimiento del mouse, el presionar una tecla, .../)
+   - notifica sus ocurrencias sólo los *observadores* que se suscriban a él
+     (/una ocurrencia es cada vez que ocurre algo, en este caso ese algo es el evento/)
+
+   #+BEGIN_QUOTE
+   Algunos ejemplos de eventos observables
+   - observar el evento click en un botón
+   - observar el evento de presionar una tecla
+   - observar el evento de mover el cursor del mouse
+   #+END_QUOTE
+*** Observers/Suscriptores (Consumidores de streams)
+   - son acciones que definimos (Ej. una operación arimética, incrementar un valor, ...)
+   - suelen generar *side-effects* (Ej. modificar del DOM un elemento UI)
+
+   #+BEGIN_QUOTE
+   Por ejemplo "modificar del DOM un elemento UI" (side-effects), cambiá el valor de un elemento UI por
+   - el resultado de una operación arimética entre dos variables
+   - el resultado de incrementar en 1 el valor de una variable
+   #+END_QUOTE
+*** Operación Suscribirse (listen)
+   - es sobre un *evento* (Ej. click, keyup, ...)
+   - es la acción de *escuchar* (listen) cuando un *evento* emite un valor
+   - es necesaria para que el Observador sea notificado
+
+   #+BEGIN_QUOTE
+   Algunos ejemplos de suscripción
+   - nos *suscribimos* al evento "Click" (sujeto observable)
+   - nos *suscribimos* al evento "presionar una tecla" (sujeto observable)
+   - nos *suscribimos* al evento "mover el cursor del mouse" (sujeto observable)
+   #+END_QUOTE
+*** Referencias
+**** Referencias Extraoficiales
+     1. [[https://medium.com/laboratoria-how-to/eventos-en-js-2436ddeadb14][Eventos en JS (medium.com/laboratoria-how-to)]]
+** Relación con el Comportamiento y Estado
+*** Conceptos
+    - El *Comportamiento* se representa con *estados*
+    - Capturamos el *retorno de valores* de *forma asincrónica* (definiendo alguna operación con side-effects)
+*** Sujeto Observable
+    - es el *comportamiento* de interés
+*** Observers
+    - son las operaciones definidas (generan side-effects)
+*** Operación Suscribirse (listen)
+    - es sobre el *comportamiento*
+*** Ejemplos
+    #+BEGIN_QUOTE
+    Un comportamiento podría ser
+    1. nos suscribimos a observar el *estado global de la aplicación* (cuando ésta cambia)
+    2. cuando *cambia de estado* nos devuelve su *nuevo estado* (nos notifica sólo cuando ocurre, operación asíncrona)
+    3. entonces *reaccionamos* ejecutando alguna operación con *side-effects*
+
+    Otros ejemplos de comportamientos los podríamos crear sobre
+    - entradas del usuario en un campo de texto
+    - estructuras de datos
+    #+END_QUOTE
+** Referencias
+*** Referencias Extraoficiales
+    1. [[https://osmancea.medium.com/programaci%C3%B3n-reactiva-con-rxjs-bebc9432485f][RxJS de cero a experto (osmancea.medium.com)]]
+    2. [[https://www.enmilocalfunciona.io/programacion-reactiva-con-rxjs/][Programación reactiva con rxjs (enmilocalfunciona.io)]]
+    3. [[https://temperies.com/2022/08/16/programacion-reactiva/][Programación reactiva (temperies.com)]]
+    4. [[https://emanuelpeg.blogspot.com/2021/09/programacion-reactiva.html][Programación reactiva (emanuelpeg.blogspot.com)]]
+    5. [[https://softwarecrafters.io/javascript/introduccion-programacion-reactiva-rxjs][Intro programación reactiva con rxjs (softwarecrafters.io)]]
+    6. [[http://ferestrepoca.github.io/paradigmas-de-programacion/reactive/reactive_teoria/index.html][Que es la programación reactiva (ferestrepoca.github.io)]]

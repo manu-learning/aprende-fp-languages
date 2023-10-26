@@ -1,0 +1,305 @@
+* Interoperabilidad JavaScript                 :javascript:interoperabilidad:
+   :PROPERTIES:
+   :DATE-CREATED: <2023-10-16 Mon>
+   :DATE-UPDATED: <2023-10-16 Mon>
+   :BOOK: Learn ClojureScript Functional Programming for the Web
+   :BOOK-CHAPTERS: nil
+   :COURSE: nil
+   :COURSE-LESSONS: nil
+   :END:
+** Cambiar Namespace via REPL
+  #+BEGIN_SRC shell
+    # en la REPL cambiar el namespace por default con siguiente..
+    (ns learn-cljs.interoperability-with-js)
+  #+END_SRC
+** Convertir Código ClojureScript a JavaScript
+*** Conceptos
+   - ~clj->js~ convierte una estructura de ClojureScript a JavaScript
+   - ~js->clj~ convierte un objeto Javascript en una estructura de ClojureScript
+*** Ejemplo
+    #+BEGIN_SRC clojure
+      ;; definimos en clojure un vector con estructuras map como elementos
+      (def personajes [{:id 1 :nombre "Hisoka"}
+                       {:id 2 :nombre "Gon"}
+                       {:id 9 :nombre "Killua"}
+                       {:id 15 :nombre "Kurapika"}])
+
+      ;; clj->js
+      ;; - transformamos código Clojure a un objeto JavaScript
+      (def personajes-js (clj->js personajes))
+    #+END_SRC
+** Operaciones sobre objetos Javascript
+*** Conceptos
+   - ~#js~ crea objetos en JavaScript con pares ordenados de la forma ~clave~ ~valor~
+   - ~.-~ seguido del nombre del atributo, obtiene el valor de un atributo asociado a un objeto JavaScript
+*** Crear Objeto
+   #+BEGIN_SRC clojure
+     ;; #js
+     ;; - definimos un objeto en JavaScript
+     (def cazador
+       #js {"id" 1
+            "nombre" "Cazador X",
+            "rango" "Desconocido",
+            "edad" 18})
+
+     ;; definimos otro objeto en JavaScript
+     (def presidente-cazadores
+       #js {"id" 1
+            "nombre" "Isaac Netero",
+            "rango" "Presidente de Asociación de Cazadores",
+            "edad" 110,
+            "habilidades" ["fuerza superhumana"
+                           "velocidad"
+                           "resistencia"],
+            "nen" {"tipo" "intensificación",
+                   "poderes" ["Primera Mano"
+                              "Tercera Mano"
+                              "100-Tipo de Guanyin"]}})
+   #+END_SRC
+*** Acceder a propiedades de un objeto
+   #+BEGIN_SRC clojure
+     ;; #js
+     ;; - definimos un objeto en JavaScript
+     (def cazador
+       #js {"id" 1
+            "nombre" "Isaac Netero",
+            "rango" "Presidente de Asociación de Cazadores",
+            "edad" 110})
+
+     ;; .-nombreAtributo
+     ;; - obtenemos el valor asociado a un atributo de un objeto javascript con .-
+     (def edad-cazador
+       (.-edad cazador))
+   #+END_SRC
+*** set! - Modificar propiedades de un objeto
+**** Concepto
+    - ~set!~ produce *side-effect* sobre un objeto javascript (/éste no es inmutable/)
+**** Ejemplos
+***** Ejemplo 1 - Crear un objeto JavaScript con #js y modificarlo con set!
+     #+BEGIN_SRC clojure
+       (def alumno #js {"nombre" "Isaac Netero", "edad" 110})
+
+       (set! (.-nombre alumno) "Carlitos")
+
+       (set! (.-edad alumno) 18)
+     #+END_SRC
+***** Ejemplo 2 - Modificar un objeto JavaScript desde la REPL
+     #+BEGIN_SRC clojure
+       ;; supongamos que ya existe el objeto javascript en el DOM del browser..
+       ;; en la consola del navegador escribiríamos en javascript lo siguiente..
+       ;; let jugador = {id:10, puntos:100}
+
+       ;; en la REPL de clojurescript..
+       ;; 1. accedemos al objeto javascript con js/nombre-objeto
+       ;; 2. accedemos a la propiedad del objeto con .-propiedad
+       ;; 3. cambiamos el valor de la propiedad con set!
+       (set! (.-puntos js/jugador) 105)
+     #+END_SRC
+***** Ejemplo 3 - Modificar un elemento del DOM usando innerHTML y set!
+     #+BEGIN_SRC clojure
+       (ns learn-cljs.mi-aplicacion
+         (:require [goog.dom :as gdom]))
+
+       ;; suponiendo que en el index.html existe un <div id='app'></div>
+       (def app-container (gdom/getElement "app"))
+
+       ;; agregamos la cadena "hola!" dentro del div
+       (set! (.-innerHTML app-container) "hola!")
+
+       ;; si no queremos usar el goog.dom
+       ;; podemos usar las funciones nativas de javascript y clojurescript
+       (-> js/document
+           (.getElementById "app")
+           (.-innerHTML)
+           (set! "hola!"))
+
+       ;; podemos confirmar ocurrió el side-effect en el div
+       (-> js/document
+           (.getElementById "app")
+           (.-innerHTML))
+
+       ;; idem que lo anterior, sólo que no usamos la macro ->
+       (.-innerHTML (.getElementById js/document "app"))
+     #+END_SRC
+*** TODO Acceder a estructuras anidadas
+   #+BEGIN_COMMENT
+   NO funciona, devuelve nil
+   #+END_COMMENT
+
+   #+BEGIN_SRC clojure
+     ;; definimos otro objeto en JavaScript
+     (def presidente-cazadores
+       #js {"id" 1
+            "nombre" "Isaac Netero",
+            "rango" "Presidente de Asociación de Cazadores",
+            "edad" 110,
+            "nen" {"tipo" "intensificación",
+                   "poderes" ["Primera Mano"
+                              "Tercera Mano"
+                              "100-Tipo de Guanyin"]}})
+
+     (println
+      (.. presidente-cazadores -nen -tipo))
+   #+END_SRC
+** Operaciones sobre arrays JavaScript
+*** Conceptos
+   - ~[]~ crea una estructura array lo usamos en combinación con ~#js~
+   - ~aget~ obtiene un elemento de un array de JavaScript por su posición
+   - ~aset~ cambia un elemento de un array de JavaScript por su posición
+   - ~.~ seguido del nombre de una función primitiva de JavaScript que queramos usar
+*** Crear array
+   #+BEGIN_SRC clojure
+     ;; #js
+     ;; - definimos en javascript un array
+     (def examen-cazador #js ["Fase Preliminar"
+                              "Primera Fase"
+                              "Un juego a Medianoche"
+                              "Tercera Fase"
+                              "Cuarta Fase"
+                              "Fase Final"])
+   #+END_SRC
+*** aget
+   #+BEGIN_SRC clojure
+     ;; - definimos en javascript un array
+     (def examen-cazador #js ["Fase Preliminar"
+                              "Primera Fase"
+                              "Segunda Fase"
+                              "Fase Final"])
+     ;; aget
+     ;; - obtenemos un elemento de un array de javascript
+     (def primera-fase-examen-cazador
+       (aget examen-cazador 0))
+   #+END_SRC
+*** aset
+   #+BEGIN_SRC clojure
+     ;; - definimos en javascript un array
+     (def examen-cazador #js ["Fase Preliminar"
+                              "Primera Fase"
+                              "Segunda Fase"
+                              "Fase Final"])
+     ;; aset
+     ;; - generamos efecto de lado sobre un array de javascript, cambiando el valor de un elemento,
+     ;; - si una variable está bindeada/vinculada a un objeto javascript, entonces puede mutar (por tanto no es inmutable..)
+     (defn renombrar-fase-examen [numero-fase nuevo-nombre]
+       (aset examen-cazador numero-fase nuevo-nombre))
+   #+END_SRC
+*** Funciones primitivas de JavaScript
+   #+BEGIN_SRC clojure
+     ;; - definimos en javascript un array
+     (def examen-cazador #js ["Fase Preliminar"
+                              "Primera Fase"
+                              "Segunda Fase"
+                              "Fase Final"])
+
+     ;; .nombreFuncionJavascript
+     ;; - usamos métodos/funciones primitivas de javascript con arrays (de javascript)
+     (def numero-de-etapa-final-examen-cazador
+       (.indexOf examen-cazador "Fase Final"))
+   #+END_SRC
+*** array-seq - Transformar Arrays Javascript en Secuencias de Clojure
+**** Conceptos
+    - ~array-seq~ transforma un *array de javascript* en una *secuencia de Clojure*
+    - ~array-seq~ se puede usar sobre elementos del DOM obtenidos con la función ~getElementsByClass~ del namespace ~goog.dom~ (/de la bilioteca Closure de Google/)
+**** Ejemplos Básicos
+***** Ejemplo 1
+     #+BEGIN_SRC clojurescript
+       ;; devuelve (1 2 3 4)
+       ;; porque transformó el array de javascript en una secuencia de clojure
+       (array-seq #js [1 2 3 4])
+
+       ;; devuelve (2 3 4)
+       ;; porque el 1 indica que array-seq cree la secuencia a luego del primer elemento
+       (array-seq #js [1 2 3 4] 1)
+
+       ;; devuelve (3 4)
+       ;; porque el 2 indica que array-seq cree la secuencia a luego del segundo elemento
+       (array-seq #js [1 2 3 4] 2)
+     #+END_SRC
+***** Ejemplo 2 - array-seq con Array de strings de JavaScript
+     #+BEGIN_SRC clojurescript
+       (def lista-favoritos #js ["lucas" "matias" "pepe"])
+
+       (defn imprimir-favoritos []
+         (let [favoritos (array-seq lista-favoritos)]
+           (doseq [contacto favoritos]
+             (println contacto))))
+     #+END_SRC
+***** Ejemplo 3 - array-seq con Array de Javascript con objetos JavaScript
+     #+BEGIN_SRC clojurescript
+       (def lista-favoritos #js [{"nombre" "lucas", "edad" 18},
+                                 {"nombre" "pedro", "edad" 19},
+                                 {"nombre" "samu", "edad" 50}])
+
+       (defn imprimir-favoritos []
+         (let [favoritos (array-seq lista-favoritos)]
+           (doseq [contacto favoritos]
+             (println contacto))))
+     #+END_SRC
+**** Ejemplo
+***** Ejemplo con REPL + HTML
+     #+BEGIN_SRC html
+       <!-- index.html -->
+       <div id="lista-contactos">
+
+       <!-- en clojurescript agruparemos todos los elementos con "contact-detail" con goog.dom/getElementsByClass -->
+         <div class="contact-detail">carlitos</div>
+         <div class="contact-detail">pepe</div>
+         <div class="contact-detail">samu</div>
+       </div>
+
+    <script src="cljs-out/dev-main.js" type="text/javascript"></script>
+     #+END_SRC
+
+     #+BEGIN_SRC clojurescript
+       ;; importamos el namespace goog.dom de la biblioteca Closure de Google
+       (ns learn-cljs.contact-book
+         (:require [goog.dom :as gdom]))
+
+       ;; - getElementsByClass devuelve un array de javascript
+       ;; con objetos javascript como elementos
+       ;;
+       ;; - array-seq convierte el array de javascript en una secuencia de ClojureScript
+       ;; con los mismos objetos javascript, de esta forma podemos recorrerlo con clojure
+       (def lista-contactos
+         (array-seq (gdom/getElementsByClass "contact-detail")))
+
+       ;; - doseq itera sobre los elementos de una secuencia igual que un for
+       ;; pero NO devuelve una "secuencia perezosa"
+       (defn imprimir-contactos []
+         (doseq [contacto lista-contactos]
+           (println (.-innerHTML contacto))))
+     #+END_SRC
+** Ejemplos Integradores
+*** Ejemplo 1
+   #+BEGIN_SRC clojure
+     ;; #js
+     ;; - definimos un objeto en JavaScript
+     (def presidente-cazadores
+       #js {"id" 1
+            "nombre" "Isaac Netero",
+            "rango" "Presidente de Asociación de Cazadores",
+            "edad" 110,
+            "habilidades" ["fuerza superhumana"
+                           "velocidad"
+                           "resistencia"],
+            "nen" {"tipo" "intensificación",
+                   "poderes" ["Primera Mano"
+                              "Tercera Mano"
+                              "100-Tipo de Guanyin"]}})
+
+     ;; js->clj
+     ;; - transformamos un objeto javascript a clojure, para usar las operaciones propias de clojure
+     ;; - se suele sugerir esto para aprovechar la inmutabilidad característica de Clojure
+     (def habilidades-presidente-cazadores
+       (map
+        (fn [habilidad] (str "habilidad: " habilidad))
+        (js->clj (.-habilidades presidente-cazadores))))
+   #+END_SRC
+
+** TODO Referencias
+*** Referencias Oficiales
+   1. [[https://clojurescript.org/reference/compiler-options][ClojureScript, Compiler Options (clojurescript.org)]]
+   2. [[https://clojurescript.org/reference/dependencies][ClojureScript, dependencies (clojurescript.org)]]
+*** Referencias Extraoficiales
+   1. [[http://lukevanderhart.com/2011/09/30/using-javascript-and-clojurescript.html][Using JavaScript libraries in ClojureScript (lukevanderhart.com)]]
+   2. [[https://gist.github.com/jmlsf/f41b46c43a31224f46a41b361356f04d][Using Javascript modules in ClojureScript (by jmlsf)]]
