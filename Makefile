@@ -38,12 +38,8 @@ GIT_REMOTES=git remote \
 #
 # TODO: falla, si el repositorio raíz es nuevo
 GIT_REMOTOS_PENDIENTES=cat repositorios.cfg \
-	| grep --invert-match --word-regexp --extended-regexp "origin" \
+	| grep --invert-match --word-regexp --extended-regexp `$(GIT_REMOTES)` \
 	| tr --delete ','
-
-# GIT_REMOTOS_PENDIENTES=cat repositorios.cfg \
-# 	| grep --invert-match --word-regexp --extended-regexp `$(GIT_REMOTES)` \
-# 	| tr --delete ','
 
 GIT_REMOTOS_PENDIENTES_CANTIDAD=$(GIT_REMOTOS_PENDIENTES) \
 	| wc --lines
